@@ -16,11 +16,13 @@ library(oceancolouR)
 waves <- c(754,779,865,885,1020)
 nwaves <- c(400,412,443,490,510,555,560,620,670,674,681,709)
 
-sensor <- "OLCI-B"
+sensor <- "OLCI-A"
 
 variable <- "CHL1" # CHL1, CHL2, CHL-OC5, or RRS
 
-years <- 2019:2020
+years <- 2020
+
+days <- 281:324
 
 input_path <- "/mnt/data2/claysa/"
 output_path <- "/mnt/data3/claysa/"
@@ -73,7 +75,7 @@ subset_to_pancan <- function(i, input_file, input_var_name, pancan_colsrows) {
 
 # input file is multiple files
 # output file is only one file, with just "RRS", no wavebands
-convert_multiple_files <- function(j, files, file_dates, full_input_path, input_var_name, pancan_colsrows,
+convert_multiple_files <- function(j, files, file_dates, full_input_path, full_output_path, input_var_name, pancan_colsrows,
                                    output_short_var_name, output_long_var_name, dim_bindata, var_units) {
     
     
@@ -84,7 +86,7 @@ convert_multiple_files <- function(j, files, file_dates, full_input_path, input_
     
     # add paths
     input_file <- paste0(full_input_path, input_file)
-    output_file <- paste0(gsub(input_path, output_path, full_input_path), output_file)
+    output_file <- paste0(full_output_path, output_file)
     
     # sort input_file by input_var_name
     input_file <- input_file[as.numeric(sapply(input_var_name, grep, input_file))]
@@ -147,14 +149,14 @@ convert_multiple_files <- function(j, files, file_dates, full_input_path, input_
 
 
 
-convert_single_file <- function(j, files, full_input_path, input_var_name, pancan_colsrows,
+convert_single_file <- function(j, files, full_input_path, full_output_path, input_var_name, pancan_colsrows,
                                 output_short_var_name, output_long_var_name, dim_bindata, var_units) {
     
     
     if (length(input_var_name)==1) {
         
         input_file <- paste0(full_input_path, files[j])
-        output_file <- gsub(input_path, output_path, paste0(substr(input_file, 1, nchar(input_file)-3), "_panCan.nc"))
+        output_file <- paste0(full_output_path, paste0(substr(files[j], 1, nchar(files[j])-3), "_panCan.nc"))
         
         sub_olci <- subset_to_pancan(1, input_file=input_file,
                                      input_var_name=input_var_name,
@@ -186,7 +188,7 @@ convert_single_file <- function(j, files, full_input_path, input_var_name, panca
     } else {
         
         input_file <- paste0(full_input_path, files[j])
-        output_file <- gsub(input_path, output_path, paste0(substr(input_file, 1, nchar(input_file)-3), "_panCan.nc"))
+        output_file <- paste0(full_output_path, paste0(substr(files[j], 1, nchar(files[j])-3), "_panCan.nc"))
         
         input_file <- rep(input_file, length(input_var_name))
         
@@ -300,9 +302,10 @@ dim_bindata <- ncdim_def(name="binDataDim",
 
 
 for (i in 1:length(years)) {
-    stop()
-    full_input_path <- paste0(input_path, sensor, "/", variable, "/PANCAN/", years[i], "/")
-    get_dir(gsub(input_path, output_path, full_input_path))
+    
+    full_input_path <- paste0(input_path, sensor, "/", variable, "/", years[i], "/")
+    full_output_path <- paste0(output_path, sensor, "/", variable, "/PANCAN/", years[i], "/")
+    get_dir(full_output_path)
     
     files <- list.files(path=full_input_path, pattern=".nc")
     files <- files[grep(variable, files)]
@@ -310,9 +313,14 @@ for (i in 1:length(years)) {
     
     if (length(files)==0) {next}
     
+    # restrict files to selected days
     file_dates <- unique(sapply(strsplit(files, "_"), "[[", 2))
+    file_doys <- as.numeric(sapply(1:length(file_dates), function(x) format(as.Date(file_dates[x], format="%Y%m%d"), "%j")))
+    files <- files[file_doys %in% days]
     
-    if (length(file_dates)==1) {
+    if (length(files)==0) {
+        next
+    } else if (length(files)==1) {
         num_cl <- 1
     } else {
         num_cl <- mult_num_cl
@@ -328,7 +336,7 @@ for (i in 1:length(years)) {
         cl <- makeCluster(num_cl)
         # Load necessary variables or custom functions into cluster.
         clusterExport(cl,
-                      varlist = c("files", "full_input_path", "input_var_name", "pancan_colsrows",
+                      varlist = c("files", "full_input_path", "full_output_path", "input_var_name", "pancan_colsrows",
                                   "output_short_var_name", "output_long_var_name",
                                   "dim_bindata", "var_units", "convert_single_file", "subset_to_pancan"),
                       envir = environment())
@@ -336,7 +344,7 @@ for (i in 1:length(years)) {
         clusterEvalQ(cl, c(library(ncdf4), library(dplyr), library(lubridate)))
         # Like lapply, but with the clusters variable cl as the first argument.
         pblapply(1:length(files), convert_single_file,
-                 files=files, full_input_path=full_input_path, input_var_name=input_var_name,
+                 files=files, full_input_path=full_input_path, full_output_path=full_output_path, input_var_name=input_var_name,
                  pancan_colsrows=pancan_colsrows, output_short_var_name=output_short_var_name,
                  output_long_var_name=output_long_var_name, dim_bindata=dim_bindata, var_units=var_units,
                  cl=cl)
@@ -353,15 +361,15 @@ for (i in 1:length(years)) {
         cl <- makeCluster(num_cl)
         # Load necessary variables or custom functions into cluster.
         clusterExport(cl,
-                      varlist = c("files", "file_dates", "full_input_path", "input_var_name", "pancan_colsrows",
-                                  "output_short_var_name", "output_long_var_name",
+                      varlist = c("files", "file_dates", "full_input_path", "full_output_path", "input_var_name", "pancan_colsrows",
+                                  "output_short_var_name", "output_long_var_name", 
                                   "dim_bindata", "var_units", "convert_multiple_files", "subset_to_pancan"),
                       envir = environment())
         # Load necessary libraries into cluster.
         clusterEvalQ(cl, c(library(ncdf4), library(dplyr), library(lubridate)))
         # Like lapply, but with the clusters variable cl as the first argument.
         pblapply(1:length(file_dates), convert_multiple_files,
-                 files=files, file_dates=file_dates, full_input_path=full_input_path, input_var_name=input_var_name,
+                 files=files, file_dates=file_dates, full_input_path=full_input_path, full_output_path=full_output_path, input_var_name=input_var_name,
                  pancan_colsrows=pancan_colsrows, output_short_var_name=output_short_var_name,
                  output_long_var_name=output_long_var_name, dim_bindata=dim_bindata, var_units=var_units,
                  cl=cl)
