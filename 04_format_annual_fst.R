@@ -129,7 +129,9 @@ for (region in regions) {
                     }
                     
                     # overwrite invalid data
-                    var_mat[var_mat < 0] <- NA
+                    if (variable != "SST") {
+                        var_mat[var_mat < 0] <- NA
+                    }
                     
                     # reshape and write to fst file
                     tmp <- data.frame(var=as.numeric(var_mat), stringsAsFactors = FALSE)
