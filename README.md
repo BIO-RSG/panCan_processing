@@ -202,8 +202,8 @@ __06_backup_files.sh__
   
 **Affected scripts:**  
 
-- 05a_create_CHL_POLY4_files.R  
-- 05b_create_CHL_GSM_GS_files.R  
+- 03a_create_CHL_POLY4_files.R  
+- 03b_create_CHL_GSM_GS_files.R  
   
 **Multiple files could not be created**  
 
