@@ -63,6 +63,23 @@ To find the right path for your own system, try typing on the command line:
 
 When updating the main PanCanadian dataset, first check the last downloaded or processed day for each sensor and variable by running **00_check_latest_file.R**.  
 
+__Input/output file paths:__  
+You can specify the base input and output paths in processing, but the subfolders in those must be in the same format:  
+For example, on hecla, the base path for downloads is `/mnt/data2/claysa`, and the base path for processed files (extracted to PanCanadian grid) is `/mnt/data3/claysa`. Inside each of those folders, the files are sorted into subfolders, following this system:  
+
+- Download subfolders: sensor / variable / year  
+
+    - Sensor = MODIS, SeaWiFS, VIIRS-SNPP, OLCI-A, or OLCI-B  
+    - Variable = CHL, PAR, RRS, or SST (for MODIS/SeaWiFS/VIIRS-SNPP), CHL1, CHL2, CHL-OC5, or RRS (for OLCI-A), and CHL1 (for OLCI-B)  
+    - Year = sensor-specific  
+    
+- Processed subfolders: sensor / variable / region / year  
+
+    - Sensor = MODIS, SeaWiFS, VIIRS-SNPP, OLCI-A, or OLCI-B  
+    - Variable = CHL_OCX, CHL_POLY4, CHL_GSM_GS, PAR, RRS, or SST (for MODIS/VIIRS-SNPP, and SeaWiFS with the exception of SST), CHL1, CHL2, CHL-OC5, or RRS (for OLCI-A), and CHL1 (for OLCI-B)  
+    - Region = PANCAN, NWA, or NEP (NWA and NEP are for CHL_POLY4 and CHL_GSM_GS only, PANCAN for everything else)  
+    - Year = sensor-specific  
+
 
 ### STEP 1  
 
@@ -136,9 +153,6 @@ SeaWiFS L3b files are in 9km resolution, so you need to download the L2 (level-2
 ### STEP 2  
 
 Subset files to the PanCanadian grid.  
-
-- __02a_subset_L3b_to_panCan_grid.py__  
-- __02b_olci_global_to_pancan.R__  
 
 #### MODIS / VIIRS-SNPP / SeaWiFS
 
