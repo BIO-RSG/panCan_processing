@@ -16,7 +16,7 @@ library(oceancolouR)
 waves <- c(754,779,865,885,1020)
 nwaves <- c(400,412,443,490,510,555,560,620,670,674,681,709)
 
-sensor <- "OLCI-A"
+sensor <- "OLCI-B"
 
 variable <- "CHL1" # CHL1, CHL2, CHL-OC5, or RRS
 
@@ -78,8 +78,7 @@ subset_to_pancan <- function(i, input_file, input_var_name, pancan_colsrows) {
 convert_multiple_files <- function(j, files, file_dates, full_input_path, full_output_path, input_var_name, pancan_colsrows,
                                    output_short_var_name, output_long_var_name, dim_bindata, var_units) {
     
-    
-    input_file <- sort(files[grep(paste0("_", file_dates[j], "_"), files)])
+    input_file <- sort(files[grep(paste0("L3b_", file_dates[j], "_"), files)])
     
     output_file <- paste0(gsub("_NRRS[[:digit:]]+_", "_RRS_", input_file[1]))
     output_file <- gsub(".nc", "_panCan.nc", output_file)
@@ -314,9 +313,11 @@ for (i in 1:length(years)) {
     if (length(files)==0) {next}
     
     # restrict files to selected days
-    file_dates <- unique(sapply(strsplit(files, "_"), "[[", 2))
+    file_dates <- sapply(strsplit(files, "_"), "[[", 2)
     file_doys <- as.numeric(sapply(1:length(file_dates), function(x) format(as.Date(file_dates[x], format="%Y%m%d"), "%j")))
-    files <- files[file_doys %in% days]
+    doy_ind <- file_doys %in% days
+    files <- files[doy_ind]
+    file_dates <- unique(file_dates[doy_ind])
     
     if (length(files)==0) {
         next
@@ -352,7 +353,6 @@ for (i in 1:length(years)) {
         stopCluster(cl)
         
     } else if (grepl("RRS", variable)) {
-        
         
         # FOR MULTIPLE VARIABLES IN MULTIPLE FILES, WRITTEN TO A SINGLE FILE
         # Example: GLOBCOLOUR OLCI RRS
