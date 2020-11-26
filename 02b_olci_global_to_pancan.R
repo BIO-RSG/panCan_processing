@@ -8,7 +8,7 @@ library(parallel)
 mult_num_cl <- 6 # or whatever works best, leaving at least one processing core free
 library(lubridate)
 library(ncdf4)
-library(sinkr)
+# library(sinkr) # for isin.convert
 library(data.table)
 library(dplyr)
 library(oceancolouR)
@@ -273,10 +273,8 @@ if (variable=="CHL1") {
 
 # # CREATE .CSV CONTAINING COL/ROW VALUES BASED ON PANCAN BINS - need this to match to OLCI col/row
 # # takes ~7-8 minutes to run
-# grid_4km <- nc_open("CAN_4km.nc")
-# bins_out <- ncvar_get(grid_4km, "bin_num")
-# nc_close(grid_4km)
-# pancan_isin <- lapply(bins_out, isin.convert)
+# data("pancan_bins_4km", package="oceancolouR")
+# pancan_isin <- lapply(pancan_bins_4km, isin.convert)
 # pancan_cols <- as.numeric(sapply(pancan_isin, "[[", 2))
 # pancan_rows <- as.numeric(sapply(pancan_isin, "[[", 3))
 # fwrite(data.frame(col=pancan_cols,

@@ -3,6 +3,7 @@ library(ncdf4)
 library(raster)
 library(dplyr)
 library(oceancolouR)
+library(stringr)
 source("OCX.R")
 
 
@@ -102,7 +103,7 @@ for (i in 1:length(years)) {
         
         # Subset list of files to this day
         L3b_files_day <- L3b_files_year %>%
-            dplyr::filter(grepl(paste0(year,pad_num(day, 3)), files))
+            dplyr::filter(grepl(paste0(year,str_pad(day,width=3,side="left",pad="0")), files))
         
         if (nrow(L3b_files_day)==0) {next}
         

@@ -6,7 +6,7 @@ library(pbapply)
 library(compiler)
 library(dplyr)
 library(oceancolouR)
-
+library(stringr)
 
 #===============================================================================
 # DESCRIPTION
@@ -162,7 +162,7 @@ for (i in 1:length(years)) {
     for (j in 1:length(days)) {
         
         day <- days[j]
-        daystr <- pad_num(day, 3)
+        daystr <- str_pad(day,width=3,side="left",pad="0")
         
         # Subset list of files to this day
         L3b_files_day <- L3b_files_year %>%
