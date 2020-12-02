@@ -4,7 +4,6 @@ library(raster)
 library(dplyr)
 library(oceancolouR)
 library(stringr)
-source("OCX.R")
 
 
 #===============================================================================
@@ -27,7 +26,7 @@ source("OCX.R")
 
 # These are both case-sensitive: use only the options listed
 sensor <- "MODIS" # MODIS, SeaWiFS, or VIIRS-SNPP
-region <- "NEP" # NWA or NEP
+region <- "NWA" # NWA or NEP
 
 years <- 2003:2020
 
@@ -115,52 +114,36 @@ for (i in 1:length(years)) {
             
             L3b_name <- L3b_files_day[fx,"files"]
             
-            cat(paste0("Getting L3b data from ",L3b_name,"...\n\n"))
-            
+            cat(paste0("Getting L3b data from ",L3b_name,"...\n"))
             
             #********************************
             # GET L3B DATA
             
+            all_rrs <- paste0("Rrs_", c(wvs$blue, wvs$green))
             in_file <- paste0(in_path_year,L3b_name)
+            
             L3b <- nc_open(in_file)
-            rrs_blue <- as.list(rep(NA,length(wvs$blue)))
-            names(rrs_blue) <- paste0("Rrs_",wvs$blue)
-            for (i in 1:length(wvs$blue)) {
-                blue_wv <- paste0("Rrs_",wvs$blue[i])
-                rrs_blue[[blue_wv]] <- data.frame(ncvar_get(L3b,blue_wv)[ssok], stringsAsFactors = FALSE)
-                colnames(rrs_blue[[blue_wv]]) <- blue_wv
+            rrs = ncvar_get(L3b, all_rrs[1])[ssok]
+            for (i in 2:length(all_rrs)) {
+                rrs <- cbind(rrs, ncvar_get(L3b, all_rrs[i])[ssok])
             }
-            
-            rrs_green <- data.frame(ncvar_get(L3b,paste0("Rrs_",wvs$green))[ssok], stringsAsFactors = FALSE)
-            colnames(rrs_green) <- paste0("Rrs_",wvs$green)
             nc_close(L3b)
+            colnames(rrs) <- all_rrs
             
-            L3b_dim <- dim(rrs_green)
+            L3b_dim <- as.integer(c(nrow(rrs), 1))
             
             
             #********************************
-            # GET NEW POLY4 CHLA 
-            cat("\nComputing POLY4 chl-a...\n\n")
+            # CALCULATE NEW POLY4 CHLA 
+            cat("Computing POLY4 chl-a...\n")
             
-            rrs <- dplyr::bind_cols(rrs_blue, rrs_green)
-            
-            nonNA_ind <- which(apply(rrs, 1, function(i) {all(is.finite(i))}))
-            
-            br <- get_br(rrs = rrs %>% filter_all(all_vars(!is.na(.))),
-                         blues = paste0("Rrs_", wvs$blue),
-                         green = paste0("Rrs_", wvs$green),
-                         use_443nm = FALSE)
-            
-            poly4_chl <- rep(NA, nrow(rrs))
-            poly4_chl[nonNA_ind] <- ocx_fn(coefs = coefs,
-                                           log_br = log10(br$rrs_ocx))
-            
+            poly4_chl <- ocx(rrs, paste0("Rrs_", wvs$blue), paste0("Rrs_", wvs$green), coefs)
             attributes(poly4_chl)$dim <- L3b_dim
             
             
             #********************************
             # ADD NEW POLY4 CHLA TO OUTPUT NETCDF
-            cat("\nAdding POLY4 chlor_a layer to L3b NetCDF...\n\n")
+            cat("Adding POLY4 chlor_a layer to L3b NetCDF...\n\n")
             
             old_file <- paste0(in_path_year, L3b_name)
             new_file <- paste0(out_path_year,

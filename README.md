@@ -45,6 +45,11 @@ https://oceancolor.gsfc.nasa.gov/docs/format/l3bins/
 As of 2020-11-20, the raw downloaded files are stored on hecla in `/mnt/data2/claysa`.  
 After subsetting them to the panCanadian grid, they are stored in `/mnt/data3/claysa`.  
 
+#### TO-DO LIST:  
+
+- For CHL_GSM_GS processing, use mean or median of X closest pixels (maybe 25) for each Rrs waveband used in a single data point, instead of only using the single closest point.  
+
+
 
 --------------------------------------------------------------------------------
 
