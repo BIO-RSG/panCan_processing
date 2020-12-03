@@ -116,13 +116,8 @@ bbp_exp <- exps[paste0(tmpreg,"_",sensorname,"_",gtype),3]
 #********************************
 # Get indices of lat/lon so the data can be restricted by region (NWA or NEP)
 
-if (region=="NWA") {
-    lon_range <- c(-95, -42)
-    lat_range <- c(39, 82)
-} else if (region=="NEP") {
-    lon_range <- c(-140, -122)
-    lat_range <- c(46, 60)
-}
+lon_range <- lon_bounds[[region]]
+lat_range <- lat_bounds[[region]]
 
 # get lats/lons for panCanadian grid at 4km resolution
 data("pancan_lats_4km")
@@ -130,7 +125,6 @@ data("pancan_lons_4km")
 
 # get lat/lon indices for the selected region (NWA or NEP)
 ssok <- abs(pancan_lons_4km) >= abs(lon_range[2]) & abs(pancan_lons_4km) <= abs(lon_range[1]) & pancan_lats_4km >= lat_range[1] & pancan_lats_4km <= lat_range[2]
-
 
 # To catch files that give the following error when writing the new data to netCDF:
 #   Error in Rsx_nc4_put_vara_double: NetCDF: Numeric conversion not representable

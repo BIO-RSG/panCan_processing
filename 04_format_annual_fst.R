@@ -40,23 +40,18 @@ base_input_path <- "/mnt/data3/claysa/"
 
 
 #*******************************************************************************
-all_waves <- list("MODIS"=list(412,443,469,488,531,547,555,645,667,678),
-                  "SeaWiFS"=list(412,443,490,510,555,670),
-                  "VIIRS-SNPP"=list(410,443,486,551,671),
-                  "OLCI-A"=list(400,412,443,490,510,555,560,620,670,674,681,709,754,779,865,885,1020),
-                  "OLCI-B"=NA)
 
 for (region in regions) {
     
     print(region)
     
-    num_pix <- ifelse(region=="PANCAN", 529797, ifelse(region=="NWA", 295425, 48854))
+    tmp_num_pix <- num_pix[[region]]
     
     for (sensor in sensors) {
         
         print(sensor)
         
-        waves <- all_waves[[sensor]]
+        waves <- all_lambda[[sensor]]
         years <- all_years[[sensor]]
         
         for (variable in variables) {
@@ -111,7 +106,7 @@ for (region in regions) {
                     
                     # start at beginning of year
                     day_list <- 1:(max(file_days))
-                    var_mat <- matrix(data = NA, nrow = num_pix, ncol = length(day_list))
+                    var_mat <- matrix(data = NA, nrow = tmp_num_pix, ncol = length(day_list))
                     
                     for (i in day_list) { # loop through each day
                         
@@ -123,7 +118,7 @@ for (region in regions) {
                             var_mat[,i] <- tmp_var_mat
                             nc_close(d)
                         } else {
-                            var_mat[,i] <- rep(NA, num_pix)
+                            var_mat[,i] <- rep(NA, tmp_num_pix)
                         }
                         
                     }

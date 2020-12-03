@@ -54,13 +54,8 @@ wvs <- all_wvs[names(all_wvs)==sensor][[sensor]]
 #********************************
 # Get indices of lat/lon so the data can be restricted by region (NWA or NEP)
 
-if (region=="NWA") {
-    lon_range <- c(-95, -42)
-    lat_range <- c(39, 82)
-} else if (region=="NEP") {
-    lon_range <- c(-140, -122)
-    lat_range <- c(46, 60)
-}
+lon_range <- lon_bounds[[region]]
+lat_range <- lat_bounds[[region]]
 
 # get lats/lons for panCanadian grid at 4km resolution
 data("pancan_lats_4km")
