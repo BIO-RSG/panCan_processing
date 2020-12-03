@@ -114,13 +114,6 @@ for (i in 1:num_loops) {
             
         } else {
             
-            # get the day of each existing netcdf filename
-            if (sensor %in% c("OLCI-A", "OLCI-B")) {
-                file_days <- as.numeric(format(as.Date(sapply(files, substr, start=10, stop=17), format="%Y%m%d"), "%j"))
-            } else {
-                file_days <- as.numeric(sapply(files, substr, start=11, stop=13))
-            }
-            
             if (length(files)==0) {
                 
                 data_yrs[[j]] <- data.frame(bin = bins,
@@ -132,6 +125,13 @@ for (i in 1:num_loops) {
                                             stringsAsFactors = FALSE)
                 
             } else {
+                
+                # get the day of each existing netcdf filename
+                if (sensor %in% c("OLCI-A", "OLCI-B")) {
+                    file_days <- as.numeric(format(as.Date(sapply(files, substr, start=10, stop=17), format="%Y%m%d"), "%j"))
+                } else {
+                    file_days <- as.numeric(sapply(files, substr, start=11, stop=13))
+                }
                 
                 data_composite <- matrix(nrow=tmp_num_pix, ncol=length(doy_vec))
                 dv_num <- as.numeric(doy_vec)
