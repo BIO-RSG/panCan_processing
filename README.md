@@ -20,9 +20,6 @@ where:
     CHL2          = chlorophyll-a in case 2 waters (neural network algorithm)  
     CHL-OC5       = chlorophyll-a, OC5 algorithm  
 
-and the PanCanadian boundaries are:  
-
-    -147 to -41 W, 39 to 86 N  
 
 *CHL_POLY4* and *CHL_GSM_GS* are regional algorithms, so they each have two sets of coefficients that are optimized to the NWA (Northwest Atlantic) or NEP (Northeast Pacific). The NWA is very large, so for some projects (such as PhytoFit), it's further reduced to a region called "Atlantic". Regions defined below:  
 
