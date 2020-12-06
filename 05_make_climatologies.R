@@ -48,6 +48,7 @@ if (composite=="daily") {
     num_loops <- 1
 }
 
+
 #*******************************************************************************
 
 for (variable in variables) {
@@ -56,13 +57,37 @@ for (variable in variables) {
     
     if (variable=="CHL_GSM_GS") {
         input_variable <- "chl_GSM_GS"
+        long_var_name <- "Chlorophyll-a Concentration"
+        var_units <- "mg m^-3"
     } else if (startsWith(variable, "CHL")) {
         input_variable <- "chlor_a"
+        long_var_name <- "Chlorophyll-a Concentration"
+        var_units <- "mg m^-3"
     } else if (variable=="SST") {
         input_variable <- "sst"
+        long_var_name <- "Sea Surface Temperature"
+        var_units <- "degrees Celsius"
     } else if (variable=="PAR") {
         input_variable <- "par"
-    }
+        long_var_name <- "Photosynthetically Active Radiation"
+        var_units <- "Einstein m^-2 d^-1"
+    } else if (variable=="CHL1") {
+        input_variable <- "chlor_a"
+        output_long_var_name <- "Chlorophyll-a Concentration"
+        var_units <- "mg m^-3"
+    } else if (variable=="CHL2") {
+        input_variable <- "chlor_a"
+        output_long_var_name <- "Chlorophyll-a Concentration, Neural Network algorithm"
+        var_units <- "mg m^-3"
+    } else if (variable=="CHL-OC5") {
+        input_variable <- "chlor_a"
+        output_long_var_name <- "Chlorophyll-a Concentration, OC5 algorithm"
+        var_units <- "mg m^-3"
+    }# else if (variable=="RRS") {
+    #     input_variable <- paste0("Rrs_", waves)
+    #     long_var_name <- paste0("Remote Sensing Reflectance at ", waves, "nm")
+    #     var_units <- "sr^-1"
+    # }
     
     regions <- all_regions[[variable]]
     
@@ -83,6 +108,13 @@ for (variable in variables) {
             data("nep_bins_4km")
             bins <- nep_bins_4km
         }
+        
+        # for netcdf output, create bin dimension
+        dim_bindata <- ncdim_def(name="binDataDim",
+                                 units = "",
+                                 vals = 1:length(bins),
+                                 unlim = FALSE,
+                                 create_dimvar = FALSE)
         
         for (sensor in sensors) {
             
@@ -218,6 +250,9 @@ for (variable in variables) {
                 }
                 
                 
+                #***************************************************************
+                # SAVE AS .FST (dataframe)
+                
                 output_fname <- paste0(sensor, "_", variable, "_", region, "_climatology_", paste0(range(years), collapse="-"), "_", composite, ".fst")
                 if (composite=="daily") {
                     output_fname <- gsub(".fst", paste0("_", str_pad(i, width=3, side="left", pad="0"), ".fst"), output_fname)
@@ -226,6 +261,42 @@ for (variable in variables) {
                 }
                 
                 write_fst(all_data, path=file.path(output_path, output_fname), compress=100)
+                
+                #***************************************************************
+                # SAVE AS NETCDF
+                
+                all_data <- all_data %>% dplyr::arrange(bin)
+                output_fname <- gsub(".fst", ".nc", output_fname)
+                
+                output_var <- list()
+                for (i in 2:ncol(all_data)) {
+                    vname <- colnames(all_data)[i]
+                    if (grepl("mean", vname) | grepl("median", vname)) {
+                        vname <- paste0(variable, "_", vname)
+                    } else {
+                        var_units <- ""
+                    }
+                    output_var[[i-1]] <- ncvar_def(name=vname,
+                                                   units=var_units,
+                                                   dim=list(dim_bindata),
+                                                   missval=NA,
+                                                   longname=vname)
+                }
+                
+                # create new output netcdf
+                ncout <- nc_create(filename=output_fname,
+                                   vars=output_var,
+                                   force_v4=TRUE)
+                
+                # put variables in file
+                for (i in 1:length(output_var)) {
+                    ncvar_put(ncout, output_var[[i]], vals=all_data[,i+1])
+                }
+                
+                # close file
+                nc_close(ncout)
+                
+                #***************************************************************
                 
             }
             
