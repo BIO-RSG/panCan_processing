@@ -23,12 +23,13 @@ where:
 
 *CHL_POLY4* and *CHL_GSM_GS* are regional algorithms, so they each have two sets of coefficients that are optimized to the NWA (Northwest Atlantic) or NEP (Northeast Pacific). The NWA is very large, so for some projects (such as PhytoFit), it's further reduced to a region called "Atlantic". Regions defined below:  
 
-| Region name | Abbreviation | Longitude bounds | Latitude bounds | Number of pixels |
-| ----------- | ------------ | --------------- | ---------------- | ---------------- |
-| PanCanadian grid | PANCAN | -147, -41 | 39, 86 | 529797 |
-| Northwest Atlantic | NWA | -95, -42 | 39, 82 | 295425 |
-| Northeast Pacific | NEP | -140, -122 | 46, 60 | 48854 |
-| Atlantic | atlantic | -71, -42 | 39, 63 | 183824 |
+| Region name | Abbreviation | Longitude bounds | Latitude bounds | Number of pixels (4km, 9km) |
+| ----------- | ------------ | --------------- | ---------------- | --------------------------- |
+| PanCanadian grid | PANCAN | -147, -41 | 39, 86 | 529797, 132579 |
+| Northwest Atlantic | NWA | -95, -42 | 39, 82 | 295425, 73771 |
+| Northeast Pacific | NEP | -140, -122 | 46, 60 | 48854, 12199 |
+| Atlantic | atlantic | -71, -42 | 39, 63 | 183824, unused |
+| Gulf of Saint Lawrence | GoSL | -75, -49 | 41, 53 | 68067, 16962 |
 
 
 Information on default flags used in MODIS/SeaWiFS/VIIRS-SNPP L3b files can be found here:  
