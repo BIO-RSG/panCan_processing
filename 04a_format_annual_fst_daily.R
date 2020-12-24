@@ -28,16 +28,6 @@ all_years <- list("MODIS"=2003:2020,
 
 base_input_path <- "/mnt/data3/claysa/"
 
-# # DEFAULTS
-# sensors <- c("MODIS", "SeaWiFS", "VIIRS-SNPP", "OLCI-A", "OLCI-B")
-# variables <- c("CHL_OCX", "CHL_POLY4", "CHL_GSM_GS", "PAR", "RRS", "CHL1", "CHL2", "CHL-OC5")
-# regions <- c("PANCAN", "NWA", "NEP")
-# all_years <- list("MODIS"=2003:2020,
-#                   "SeaWiFS"=1997:2010,
-#                   "VIIRS-SNPP"=2012:2020,
-#                   "OLCI-A"=2016:2020,
-#                   "OLCI-B"=2019:2020)
-
 
 #*******************************************************************************
 
