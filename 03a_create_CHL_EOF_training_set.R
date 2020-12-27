@@ -18,7 +18,7 @@
 
 sensor <- "MODIS"       # MODIS, SeaWiFS, or VIIRS-SNPP
 region <- "GoSL"        # NWA, NEP, or GoSL
-years <- 1997:2019
+years <- 1997:2019      # years of in situ data, used only in the output csv filename
 max_dist <- 10000       # in metres
 max_depth <- 10         # in metres
 max_timediff <- 3       # in hours
