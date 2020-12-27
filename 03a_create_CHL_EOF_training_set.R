@@ -9,6 +9,9 @@
 #   non-flagged pixels, 3x3 box, no matches with any negative Rrs, at least 6 pixels valid, use the median
 #   +- 3hr window
 
+# Note: this works for matchups with Rrs and chla in a 5x5 box.
+# (If they're 3x3, adjust the get_var function below)
+
 
 #*******************************************************************************
 # ADJUST THESE VARIABLES
@@ -28,7 +31,6 @@ matchup_file <- "../satellite_validation/02_matchups/chl_in_situ_gosl_1997-2019.
 if (!file.exists(matchup_file)) {
     stop("Missing input matchup file.")
 }
-
 
 library(ncdf4)
 library(oceancolouR)
@@ -72,10 +74,11 @@ nc_close(nc)
 
 
 # REDUCE VARIABLES IN 5X5 BOX TO SINGLE POINT
+window_size <- dim(nclat)[1]
 # (need in situ and satellite lats/lons, and geodist to get accurate distance)
 # NOTE: USING THE CENTRE PIXEL LAT/LON, even though the median of the 3x3 matrix is used for Rrs
-nclat <- apply(nclat, MARGIN=2, FUN="[[", ...=13)
-nclon <- apply(nclon, MARGIN=2, FUN="[[", ...=13)
+nclat <- apply(nclat, MARGIN=2, FUN="[[", ...=ceiling(window_size/2))
+nclon <- apply(nclon, MARGIN=2, FUN="[[", ...=ceiling(window_size/2))
 final_rrs <- lapply(1:length(rrs), FUN=function(i) apply(rrs[[i]], MARGIN=2, FUN=get_var))
 final_rrs <- do.call(cbind, final_rrs)
 sat_chla <- apply(sat_chla, MARGIN=2, FUN=get_var)
