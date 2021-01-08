@@ -31,11 +31,11 @@ library(stringr)
 # VARIABLES TO CHANGE
 
 # These are case-sensitive: use only the options listed
-sensor <- "MODIS" # MODIS, SeaWiFS, or VIIRS-SNPP
+sensor <- "SeaWiFS" # MODIS, SeaWiFS, or VIIRS-SNPP
 region <- "GoSL" # NWA or NEP (for CHL_POLY4 or CHL_GSM_GS), or GoSL (for CHL_EOF)
-variable <- "CHL_EOF"# CHL_POLY4, CHL_GSM_GS, or CHL_EOF
+variable <- "CHL_EOF" # CHL_POLY4, CHL_GSM_GS, or CHL_EOF
 
-years <- 2003:2020
+years <- 1997:2010
 
 days <- 1:366
 
@@ -199,8 +199,8 @@ for (i in 1:length(years)) {
     in_path_year <- paste0(path, "/RRS/PANCAN/", year)
     out_path_year <- file.path(path, variable, region, year)
     
-    # create the directory, if necessary
-    get_dir(out_path_year)
+    # create the output directories, if necessary
+    dir.create(out_path_year, showWarnings=FALSE, recursive=TRUE)
     
     L3b_files_year <- data.frame(files=list.files(in_path_year), stringsAsFactors = FALSE)
     
@@ -245,21 +245,37 @@ for (i in 1:length(years)) {
             
             L3b_dim <- as.integer(c(nrow(rrs), 1))
             
-            
-            if (variable=="CHL_GSM_GS") {
-                
-                # Remove pixels where any Rrs are NA
-                # Note: this step is highly recommended for GSM because it takes so much longer to run than POLY4 or EOF
-                # (each individual pixel is fitted, rather than all pixels fitting at once)
-                nonNA_ind <- which(apply(rrs, 1, function(i) {all(is.finite(i) & i >= 0)}))
-                
-                # check if there is any valid data left, and make sure it's in matrix format for the gsm function
-                if (length(nonNA_ind)==0) {
+            # For GSM or EOF, remove pixels where any Rrs are NA
+            if (variable == "CHL_POLY4") {
+                nonNA_ind <- rep(TRUE, nrow(rrs))
+            } else {
+                nonNA_ind <- apply(is.finite(rrs) & rrs >= 0, MARGIN=1, FUN=sum)==ncol(rrs)
+                if (sum(nonNA_ind)==0) {
                     next
-                } else if (length(nonNA_ind)==1) {
+                } else if (sum(nonNA_ind)==1) {
                     rrs <- t(as.matrix(rrs[nonNA_ind,]))
+                } else {
+                    rrs <- rrs[nonNA_ind,]
                 }
+            }
+            
+            
+            #*******************************************************************
+            # CALCULATE NEW CHLA 
+            cat(paste0("Computing ", variable, "...\n"))
+            
+            # create empty vector of the appropriate length
+            new_chl <- rep(NA, num_pix[[region]][["4km"]])
+            
+            if (variable == "CHL_POLY4") {
                 
+                chl_valid <- ocx(rrs, paste0("Rrs_", wvs$blue), paste0("Rrs_", wvs$green), coefs)
+                
+            } else if (variable == "CHL_EOF") {
+                
+                chl_valid <- eof_chl(rrs=as.data.frame(rrs), training_set=eof_training_set)
+                
+            } else if (variable == "CHL_GSM_GS") {
                 
                 # # FORMAT RRS
                 # if (rformat=="median-rrs") {
@@ -281,27 +297,8 @@ for (i in 1:length(years)) {
                 #     
                 # }
                 
-                
                 # Convert values to below sea level.
                 rrs <- rrs/(0.52 + 1.7*rrs)
-                
-            }
-            
-            
-            #*******************************************************************
-            # CALCULATE NEW CHLA 
-            cat(paste0("Computing ", variable, "...\n"))
-            
-            
-            if (variable == "CHL_POLY4") {
-                
-                new_chl <- ocx(rrs, paste0("Rrs_", wvs$blue), paste0("Rrs_", wvs$green), coefs)
-                
-            } else if (variable == "CHL_EOF") {
-                
-                new_chl <- eof_chl(rrs=rrs, training_set=eof_training_set)
-                
-            } else if (variable == "CHL_GSM_GS") {
                 
                 num_cl <- min(num_cl, detectCores()-1)
                 
@@ -323,12 +320,12 @@ for (i in 1:length(years)) {
                 stopCluster(cl)
                 
                 # Get new GSM chl from output
-                iops <- t(iops)
-                new_chl <- rep(NA, num_pix[[region]][["4km"]])
-                new_chl[nonNA_ind] <- as.numeric(iops[,1])
+                chl_valid <- as.numeric((t(iops))[,1])
                 
             }
-
+            
+            # add calculated chlorophyll to valid indices of output vector
+            new_chl[nonNA_ind] <- chl_valid
             attributes(new_chl)$dim <- L3b_dim
             
             
