@@ -9,12 +9,12 @@ Created on Mon Apr  9 15:18:49 2018
 #==================================================================
 # VARIABLES THAT CAN BE CHANGED BY THE USER
 
-# define variable that is being extracted (CHL, PAR, or RRS, case-sensitive)
+# define variable that is being extracted (CHL, PAR, SST, or RRS, case-sensitive)
 varlist = ["CHL", "PAR", "RRS", "SST"]
 # sensors to use (MODIS, VIIRS-SNPP, or SeaWiFS)
 sensors = ["MODIS", "VIIRS-SNPP"]
-years = range(2003,2021) # remember the end value is excluded
-doys = range(1, 367)
+years = range(2020, 2021) # remember the end value is excluded
+doys = range(299, 367)
 
 # path to script and 02a_CAN_4km.nc
 base_script_path = '/home/claysa/panCan_processing/'

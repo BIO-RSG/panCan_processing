@@ -40,7 +40,7 @@
 #       days=$(seq 354 1 356)
 #       days=$(seq 154 1 158)" 152 154 159"
 #       days=$(seq 1 1 152)" "$(seq 245 1 366) --> to download days 1 to 152 and 245 to 366
-days=$(seq 1 1 366)
+days=$(seq 299 1 366)
 
 # Years to download. See "days" variable for list formatting examples.
 years=2020
@@ -103,12 +103,6 @@ for sensor in $sensors; do
             fi
         fi
         
-        if [ $varname = 'CHL' ]; then
-            pathVarname='CHL_OCX'
-        else
-            pathVarname=$varname
-        fi
-        
         
         for year in ${years}; do
             
@@ -117,7 +111,7 @@ for sensor in $sensors; do
             # Make the output folder for this sensor/variable/year L3b dataset if it doesn't already exist
             # Default directory: data2 on hecla
             # Note the '-p' option checks if the directory exists before creating it
-            current_path=${output_folder}/${sensor}/${pathVarname}/${year}
+            current_path=${output_folder}/${sensor}/${varname}/${year}
             mkdir -p ${current_path}
 
             check_year=$(isleap $year)
