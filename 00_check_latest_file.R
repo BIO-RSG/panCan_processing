@@ -20,11 +20,11 @@ years <- c(2020, 2010, 2020, 2020, 2020)
 # REGIONS: PANCAN for all but CHL_POLY4 and CHL_GSM_GS, which are NWA and NEP
 
 # variables/regions for each sensor
-vr <- list("MODIS"=c("CHL/PANCAN", "PAR/PANCAN", "RRS/PANCAN",
+vr <- list("MODIS"=c("CHL_OCX/PANCAN", "PAR/PANCAN", "RRS/PANCAN", "SST/PANCAN",
                      "CHL_POLY4/NWA", "CHL_POLY4/NEP", "CHL_GSM_GS/NWA", "CHL_GSM_GS/NEP"),
-           "SeaWiFS"=c("CHL/PANCAN", "PAR/PANCAN", "RRS/PANCAN",
+           "SeaWiFS"=c("CHL_OCX/PANCAN", "PAR/PANCAN", "RRS/PANCAN", "SST/PANCAN",
                        "CHL_POLY4/NWA", "CHL_POLY4/NEP", "CHL_GSM_GS/NWA", "CHL_GSM_GS/NEP"),
-           "VIIRS-SNPP"=c("CHL/PANCAN", "PAR/PANCAN", "RRS/PANCAN",
+           "VIIRS-SNPP"=c("CHL_OCX/PANCAN", "PAR/PANCAN", "RRS/PANCAN", "SST/PANCAN",
                           "CHL_POLY4/NWA", "CHL_POLY4/NEP", "CHL_GSM_GS/NWA", "CHL_GSM_GS/NEP"),
            "OLCI-A"=c("CHL1/PANCAN", "CHL2/PANCAN", "CHL-OC5/PANCAN", "RRS/PANCAN"),
            "OLCI-B"=c("CHL1/PANCAN"))
@@ -55,13 +55,15 @@ for (i in 1:nrow(last_day)) {
     if (variable %in% c("CHL_GSM_GS", "CHL_POLY4")) {
         dday <- NA
     } else {
-        dpath <- file.path(download_path, sensor, variable, year)
+        dpath <- file.path(download_path, sensor, ifelse(variable=="CHL_OCX", "CHL", variable), year)
         dfiles <- list.files(dpath)
         if (length(dfiles)==0) {
             dday <- NA
         } else {
             if (grepl("OLCI", sensor)) {
                 ddays <- sort(as.numeric(format(as.Date(sapply(dfiles, substr, start=5, stop=12), format="%Y%m%d"), "%j")))
+            } else if (grepl("SST", variable)) {
+                ddays <- sapply(1:length(dfiles), function(x) format(as.Date(strsplit(dfiles, "[.]")[[x]][2], format="%Y%m%d"), "%j"))
             } else {
                 ddays <- sort(as.numeric(sapply(dfiles, substr, start=6, stop=8)))
             }
