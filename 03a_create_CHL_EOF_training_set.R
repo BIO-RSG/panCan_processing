@@ -9,8 +9,11 @@
 #   non-flagged pixels, 3x3 box, no matches with any negative Rrs, at least 6 pixels valid, use the median
 #   +- 3hr window
 
-# Note: this works for matchups with Rrs and chla in a 5x5 box.
-# (If they're 3x3, adjust the get_var function below)
+# Note 1: This works for matchups with Rrs and chla in a 5x5 box.
+#         (If they're 3x3, adjust the get_var function below)
+
+# Note 2: For the in situ dataset in /home/claysa/satellite_validation/01_in_situ_data/chl_in_situ_gosl_1997-2019.txt,
+#         the timezone is UTC
 
 
 #*******************************************************************************
