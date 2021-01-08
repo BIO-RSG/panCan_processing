@@ -28,7 +28,7 @@ where:
 | PanCanadian grid | PANCAN | -147, -41 | 39, 86 | 529797, 132579 |
 | Northwest Atlantic | NWA | -95, -42 | 39, 82 | 295425, 73771 |
 | Northeast Pacific | NEP | -140, -122 | 46, 60 | 48854, 12199 |
-| Atlantic | atlantic | -71, -42 | 39, 63 | 183824, unused |
+| Atlantic | atlantic | -71, -42 | 39, 62.5 | 183824, unused |
 | Gulf of Saint Lawrence | GoSL | -75, -49 | 41, 53 | 68067, 16962 |
 
 
