@@ -20,7 +20,7 @@
 #           aphstar
 #           aw and bbw (NOT temperature and salinity dependent)
 
-
+rm(list=ls())
 library(ncdf4)
 library(raster)
 library(dplyr)
@@ -31,15 +31,18 @@ library(stringr)
 # VARIABLES TO CHANGE
 
 # These are case-sensitive: use only the options listed
-sensor <- "SeaWiFS" # MODIS, SeaWiFS, or VIIRS-SNPP
-region <- "GoSL" # NWA or NEP (for CHL_POLY4 or CHL_GSM_GS), or GoSL (for CHL_EOF)
-variable <- "CHL_EOF" # CHL_POLY4, CHL_GSM_GS, or CHL_EOF
+sensor <- "MODIS" # MODIS, SeaWiFS, or VIIRS-SNPP
+region <- "NWA" # NWA or NEP (for CHL_POLY4 or CHL_GSM_GS), or GoSL (for CHL_EOF)
+variable <- "CHL_POLY4" # CHL_POLY4, CHL_GSM_GS, or CHL_EOF
 
-years <- 1997:2010
+years <- 2020
 
-days <- 1:366
+days <- 103
 
 path <- paste0("/mnt/data3/claysa/", sensor)
+
+# acceptable range of calculated chl (anything outside this will be converted to NA)
+chl_range <- c(0,100)
 
 
 #**************************
@@ -84,7 +87,7 @@ if (variable == "CHL_POLY4") {
     all_wvs <- list("MODIS"=list("blue"=c(443,488), "green"=547),
                     "SeaWiFS"=list("blue"=c(443,490,510), "green"=555),
                     "VIIRS-SNPP"=list("blue"=c(443,486), "green"=551))
-    wvs <- all_wvs[names(all_wvs)==sensor][[sensor]]
+    wvs <- all_wvs[[sensor]]
     
     all_rrs <- paste0("Rrs_", c(wvs$blue, wvs$green))
     
@@ -224,7 +227,7 @@ for (i in 1:length(years)) {
         #********************************
         # LOOP THROUGH FILES FOR THIS DAY (if more than one exists)
         
-        for (fx in 1:length(L3b_files_day)) {
+        for (fx in 1:nrow(L3b_files_day)) {
             
             L3b_name <- L3b_files_day[fx,"files"]
             
@@ -245,18 +248,14 @@ for (i in 1:length(years)) {
             
             L3b_dim <- as.integer(c(nrow(rrs), 1))
             
-            # For GSM or EOF, remove pixels where any Rrs are NA
-            if (variable == "CHL_POLY4") {
-                nonNA_ind <- rep(TRUE, nrow(rrs))
+            # remove rows with invalid Rrs
+            nonNA_ind <- apply(is.finite(rrs) & rrs >= 0, MARGIN=1, FUN=sum)==ncol(rrs)
+            if (sum(nonNA_ind) > 1) {
+                rrs <- rrs[nonNA_ind,]
+            } else if (sum(nonNA_ind)==1) {
+                rrs <- t(as.matrix(rrs[nonNA_ind,]))
             } else {
-                nonNA_ind <- apply(is.finite(rrs) & rrs >= 0, MARGIN=1, FUN=sum)==ncol(rrs)
-                if (sum(nonNA_ind)==0) {
-                    next
-                } else if (sum(nonNA_ind)==1) {
-                    rrs <- t(as.matrix(rrs[nonNA_ind,]))
-                } else {
-                    rrs <- rrs[nonNA_ind,]
-                }
+                next
             }
             
             
@@ -327,6 +326,8 @@ for (i in 1:length(years)) {
             # add calculated chlorophyll to valid indices of output vector
             new_chl[nonNA_ind] <- chl_valid
             attributes(new_chl)$dim <- L3b_dim
+            
+            new_chl[!is.finite(new_chl) | new_chl < chl_range[1] | new_chl > chl_range[2]] <- NA
             
             
             #*******************************************************************
