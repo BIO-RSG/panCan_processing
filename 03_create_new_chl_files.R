@@ -33,11 +33,11 @@ library(stringr)
 # These are case-sensitive: use only the options listed
 sensor <- "MODIS" # MODIS, SeaWiFS, or VIIRS-SNPP
 region <- "NWA" # NWA or NEP (for CHL_POLY4 or CHL_GSM_GS), or GoSL (for CHL_EOF)
-variable <- "CHL_POLY4" # CHL_POLY4, CHL_GSM_GS, or CHL_EOF
+variable <- "CHL_GSM_GS" # CHL_POLY4, CHL_GSM_GS, or CHL_EOF
 
-years <- 2020
+years <- 2003:2021
 
-days <- 103
+days <- 1:366
 
 path <- paste0("/mnt/data3/claysa/", sensor)
 
@@ -239,11 +239,12 @@ for (i in 1:length(years)) {
             in_file <- file.path(in_path_year,L3b_name)
             
             L3b <- nc_open(in_file)
-            rrs = ncvar_get(L3b, all_rrs[1])[ssok]
-            for (i in 2:length(all_rrs)) {
-                rrs <- cbind(rrs, ncvar_get(L3b, all_rrs[i])[ssok])
+            rrs <- list()
+            for (i in 1:length(all_rrs)) {
+                rrs[[i]] <- ncvar_get(L3b, all_rrs[i])[ssok]
             }
             nc_close(L3b)
+            rrs <- do.call(cbind, rrs)
             colnames(rrs) <- all_rrs
             
             L3b_dim <- as.integer(c(nrow(rrs), 1))
