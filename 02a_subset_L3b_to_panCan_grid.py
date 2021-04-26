@@ -10,17 +10,18 @@ Created on Mon Apr  9 15:18:49 2018
 # VARIABLES THAT CAN BE CHANGED BY THE USER
 
 # define variable that is being extracted (CHL, PAR, SST, or RRS, case-sensitive)
-varlist = ["CHL", "PAR", "RRS", "SST"]
-# sensors to use (MODIS, VIIRS-SNPP, or SeaWiFS)
-sensors = ["MODIS", "VIIRS-SNPP"]
+# example: varlist = ["CHL", "PAR", "RRS", "SST"]
+varlist = ["CHL_GSM_GS"]
+sensors = ["MODIS"]
 years = range(2020, 2021) # remember the end value is excluded
-doys = range(299, 367)
+doys = range(103, 104)
+base_input_path = "/home/claysa/panCan_processing/L2/"
 
 # path to script and 02a_CAN_4km.nc
 base_script_path = '/home/claysa/panCan_processing/'
 
 # path to input and output
-base_input_path = '/mnt/data2/claysa/'
+# base_input_path = '/mnt/data2/claysa/'
 base_output_path = '/mnt/data3/claysa/'
 
 
@@ -64,7 +65,7 @@ def extract_bins(filein, fileout, data_datetime, bins_out, var, sensor):
         time_out[:] = nc4.date2num(data_datetime, units=time_out.units, calendar=time_out.calendar)
 
 #       get data from netcdf file
-        if var == 'CHL' or var == 'PAR' or var == 'SST':
+        if var == 'CHL' or var == 'PAR' or var == 'SST' or var == 'CHL_POLY4' or var == 'CHL_GSM_GS':
                if var == 'CHL':
                        var = 'chlor_a'
                elif var == 'PAR':

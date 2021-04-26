@@ -11,7 +11,7 @@
 sensors <- c("MODIS", "SeaWiFS", "VIIRS-SNPP", "OLCI-A", "OLCI-B")
 
 # last year downloaded for each sensor above (vector, same length as "sensors")
-years <- c(2020, 2010, 2020, 2020, 2020)
+years <- c(2021, 2010, 2021, 2020, 2020)
 
 # SENSOR VARIABLES:
 #   MODIS/SeaWiFS/VIIRS-SNPP: CHL, PAR, RRS, CHL_POLY4, CHL_GSM_GS

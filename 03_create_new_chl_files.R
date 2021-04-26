@@ -31,17 +31,18 @@ library(stringr)
 # VARIABLES TO CHANGE
 
 # These are case-sensitive: use only the options listed
-sensor <- "MODIS" # MODIS, SeaWiFS, or VIIRS-SNPP
+sensor <- "VIIRS-SNPP" # MODIS, SeaWiFS, or VIIRS-SNPP
 region <- "NWA" # NWA or NEP (for CHL_POLY4 or CHL_GSM_GS), or GoSL (for CHL_EOF)
 variable <- "CHL_GSM_GS" # CHL_POLY4, CHL_GSM_GS, or CHL_EOF
 
-years <- 2003:2021
+years <- 2012:2021
 
 days <- 1:366
 
 path <- paste0("/mnt/data3/claysa/", sensor)
 
 # acceptable range of calculated chl (anything outside this will be converted to NA)
+# **note: this is required to avoid anomalous huge values (e.g. 1e124) that cause an error when writing to netCDF
 chl_range <- c(0,100)
 
 

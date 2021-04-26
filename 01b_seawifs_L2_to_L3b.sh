@@ -13,13 +13,13 @@
 #       days=$(seq 354 1 356)
 #       days=$(seq 154 1 158)" 152 154 159"
 #       days=$(seq 1 1 152)" "$(seq 245 1 366) --> to download days 1 to 152 and 245 to 366
-days=$(seq 119 1 119)
+days=$(seq 1 1 366)
 
 # Years to download. See "days" variable for list formatting examples.
-years=$(seq 2003 1 2003)
+years=$(seq 1997 1 2010)
 
 # Variable name (CHL, PAR, or RRS)
-output_varnames="CHL"
+output_varnames="CHL RRS PAR"
 
 base_input_folder="/mnt/data2/claysa/SeaWiFS/L2/"
 base_output_folder="/mnt/data2/claysa/SeaWiFS/"
@@ -57,7 +57,7 @@ for output_varname in $output_varnames; do
             find ${input_folder} -maxdepth 1 -name "S${year}${day}*" > seawifs_L2_to_L3b_tmp.txt
             output_file="S${year}${day}.L3b_DAY_${output_varname}.nc"
             
-            l2bin ifile="seawifs_L2_to_L3b_tmp.txt" ofile="${output_folder}${output_file}" eday="${year}${day}" sday="${year}${day}" l3bprod=${input_varname} prodtype="day" resolution="4" flaguse="ATMFAIL,LAND,HIGLINT,HILT,HISATZEN,STRAYLIGHT,CLDICE,COCCOLITH,HISOLZEN,LOWLW,CHLFAIL,NAVWARN,MAXAERITER,CHLWARN,ATMWARN,NAVFAIL"
+            l2bin ifile="seawifs_L2_to_L3b_tmp.txt" ofile="${output_folder}${output_file}" eday="${year}${day}" sday="${year}${day}" l3bprod=${input_varname} prodtype="day" resolution="4" flaguse="ATMFAIL,LAND,HIGLINT,HILT,HISATZEN,STRAYLIGHT,CLDICE,COCCOLITH,HISOLZEN,LOWLW,CHLFAIL,NAVWARN,MAXAERITER,CHLWARN,ATMWARN,NAVFAIL,FILTER"
             
             # NOBS AND NSCENES TOO?
             

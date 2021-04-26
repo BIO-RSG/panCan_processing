@@ -146,40 +146,60 @@ test_df <- df[!training_ind,]
 
 
 
-#*******************************************************************************
-# WRITE TO OUTPUT
-
-write.csv(dplyr::bind_cols(metadata_df[training_ind,], training_df),
-          file=paste0("03c_EOF_training_set_", region, "_", sensor, "_", paste0(range(years), collapse="-"), ".csv"),
-          row.names=FALSE,
-          quote=FALSE)
-
-
-
-stop()
+# #*******************************************************************************
+# # WRITE TO OUTPUT
+# 
+# write.csv(dplyr::bind_cols(metadata_df[training_ind,], training_df),
+#           file=paste0("03c_EOF_training_set_", region, "_", sensor, "_", paste0(range(years), collapse="-"), ".csv"),
+#           row.names=FALSE,
+#           quote=FALSE)
+# 
+# 
+# 
+# stop()
 #*******************************************************************************
 # COMPARE ALGORITHMS BELOW
 
+plot_and_stats <- function(sat_chl, insitu_chl, alg) {
+    logy <- log10(sat_chl)
+    logy[!is.finite(logy)] <- NA
+    logx <- log10(insitu_chl)
+    logx[!is.finite(logx)] <- NA
+    tmp_lm <- lm(logy ~ logx)
+    tmp_stats <- get_lm_stats(tmp_lm)
+    tmp_stats <- c(tmp_stats$coefs[,1], tmp_stats$stats)
+    tmp_stats <- data.frame(matrix(round(as.numeric(unlist(tmp_stats)), 3), nrow=1))
+    colnames(tmp_stats) <- c("Intercept", "Slope", "Rsquared", "pvalue", "num obs", "RMSE")
+    p <- ggplot(data.frame(in_situ_chl = insitu_chl, satellite_chl = sat_chl, stringsAsFactors = FALSE)) +
+        geom_point(aes(x=in_situ_chl, y=satellite_chl), alpha=0.5) +
+        geom_abline(intercept=0, slope=1) +
+        geom_abline(intercept=tmp_stats$Intercept, slope=tmp_stats$Slope, color="red", linetype="dotted") +
+        theme_bw() +
+        ggtitle(alg) +
+        scale_x_log10(limits=c(0.1,30)) +
+        scale_y_log10(limits=c(0.1,30)) +
+        annotation_custom(tableGrob(t(tmp_stats), cols = NULL, theme=ttheme_minimal(base_size=10, padding=unit(c(1,1), "mm"))),
+                          xmin=-Inf, xmax=0.01, ymin=0.8, ymax=Inf)
+    return(p)
+}
 
 
 # EOF CHL
 test_eof_chl <- eof_chl(rrs=test_df, training_set=training_df)
-logy <- log10(test_eof_chl)
-logy[!is.finite(logy)] <- NA
-logx <- log10(test_df$chla)
-logx[!is.finite(logx)] <- NA
-eof_lm <- lm(logy ~ logx)
-eof_stats <- round(get_lm_stats(eof_lm), 3)
-plot_eof <- ggplot(data.frame(in_situ_chl = test_df$chla, satellite_chl = test_eof_chl, stringsAsFactors = FALSE)) +
-    geom_point(aes(x=in_situ_chl, y=satellite_chl), alpha=0.5) +
-    geom_abline(intercept=0, slope=1) +
-    geom_abline(intercept=eof_stats$Intercept, slope=eof_stats$Slope, color="red", linetype="dotted") +
-    theme_bw() +
-    ggtitle("EOF") +
-    scale_x_log10(limits=c(0.1,30)) +
-    scale_y_log10(limits=c(0.1,30)) +
-    annotation_custom(tableGrob(t(eof_stats), cols = NULL, theme=ttheme_minimal(base_size=10, padding=unit(c(1,1), "mm"))),
-                      xmin=-Inf, xmax=0.01, ymin=0.8, ymax=Inf)
+plot_eof <- plot_and_stats(test_eof_chl, test_df$chla, "EOF")
+
+# try EOF without other bands
+test_eof_chl2 <- eof_chl(rrs=test_df %>% dplyr::select(-Rrs_412), training_set=training_df %>% dplyr::select(-Rrs_412))
+plot_eof2 <- plot_and_stats(test_eof_chl2, test_df$chla, "EOF_no412")
+
+test_eof_chl3 <- eof_chl(rrs=test_df %>% dplyr::select(-Rrs_443), training_set=training_df %>% dplyr::select(-Rrs_443))
+plot_eof3 <- plot_and_stats(test_eof_chl3, test_df$chla, "EOF_no443")
+
+test_eof_chl4 <- eof_chl(rrs=test_df %>% dplyr::select(-Rrs_412, -Rrs_443), training_set=training_df %>% dplyr::select(-Rrs_412, -Rrs_443))
+plot_eof4 <- plot_and_stats(test_eof_chl4, test_df$chla, "EOF_no412,443")
+
+(plot_eof + plot_eof2) / (plot_eof3 + plot_eof4)
+
 
 
 
@@ -187,45 +207,10 @@ plot_eof <- ggplot(data.frame(in_situ_chl = test_df$chla, satellite_chl = test_e
 lambdas <- get_lambda(ifelse(sensor=="VIIRS-SNPP", "viirs", tolower(sensor)), use_443nm = FALSE)
 best_alg_coefs <- get_coefs(ifelse(sensor=="VIIRS-SNPP", "viirs", tolower(sensor)), "nwa", "poly4")
 poly4_chl <- ocx(rrs=as.matrix(test_df), blues=lambdas$blues, green=lambdas$green, coefs=best_alg_coefs)
-logy <- log10(poly4_chl)
-logy[!is.finite(logy)] <- NA
-logx <- log10(test_df$chla)
-logx[!is.finite(logx)] <- NA
-poly4_lm <- lm(logy ~ logx)
-poly4_stats <- round(get_lm_stats(poly4_lm), 3)
-plot_poly4 <- ggplot(data.frame(in_situ_chl = test_df$chla, satellite_chl = poly4_chl, stringsAsFactors = FALSE)) +
-    geom_point(aes(x=in_situ_chl, y=satellite_chl), alpha=0.5) +
-    geom_abline(intercept=0, slope=1) +
-    geom_abline(intercept=poly4_stats$Intercept, slope=poly4_stats$Slope, color="red", linetype="dotted") +
-    theme_bw() +
-    ggtitle("POLY4") +
-    scale_x_log10(limits=c(0.1,30)) +
-    scale_y_log10(limits=c(0.1,30)) +
-    annotation_custom(tableGrob(t(poly4_stats), cols = NULL, theme=ttheme_minimal(base_size=10, padding=unit(c(1,1), "mm"))),
-                      xmin=-Inf, xmax=0.01, ymin=0.8, ymax=Inf)
-
-
-
+plot_poly4 <- plot_and_stats(poly4_chl, test_df$chla, "POLY4")
 
 # OCX (from satellite)
-logy <- log10(ocx_chl)
-logy[!is.finite(logy)] <- NA
-logx <- log10(test_df$chla)
-logx[!is.finite(logx)] <- NA
-ocx_lm <- lm(logy ~ logx)
-ocx_stats <- round(get_lm_stats(ocx_lm), 3)
-plot_ocx <- ggplot(data.frame(in_situ_chl = test_df$chla, satellite_chl = ocx_chl, stringsAsFactors = FALSE)) +
-    geom_point(aes(x=in_situ_chl, y=satellite_chl), alpha=0.5) +
-    geom_abline(intercept=0, slope=1) +
-    geom_abline(intercept=ocx_stats$Intercept, slope=ocx_stats$Slope, color="red", linetype="dotted") +
-    theme_bw() +
-    ggtitle("OCx") +
-    scale_x_log10(limits=c(0.1,30)) +
-    scale_y_log10(limits=c(0.1,30)) +
-    annotation_custom(tableGrob(t(ocx_stats), cols = NULL, theme=ttheme_minimal(base_size=10, padding=unit(c(1,1), "mm"))),
-                      xmin=-Inf, xmax=0.01, ymin=0.8, ymax=Inf)
-
-
+plot_ocx <- plot_and_stats(ocx_chl, test_df$chla, "OCx")
 
 # GSM_GS
 library(parallel)
@@ -244,7 +229,6 @@ bbp_exp <- exps[3]
 wvs <- all_lambda[[sensor]]
 rrs <- rrs/(0.52 + 1.7*rrs)
 num_cl <- min(num_cl, detectCores()-1)
-
 cl <- makeCluster(num_cl)
 clusterExport(cl, c('gsm_cmp','gsm_model','rrs','wvs','chl_exp','adg_exp','bbp_exp','gtype'))
 iops <- pbapply(X=rrs,
@@ -257,26 +241,8 @@ iops <- pbapply(X=rrs,
                 gtype=gtype,
                 cl=num_cl)
 stopCluster(cl)
-iops <- t(iops)
-gsm_gs_chl <- as.numeric(iops[,1])
-
-logy <- log10(gsm_gs_chl)
-logy[!is.finite(logy)] <- NA
-logx <- log10(test_df$chla)
-logx[!is.finite(logx)] <- NA
-gsm_gs_lm <- lm(logy ~ logx)
-gsm_gs_stats <- round(get_lm_stats(gsm_gs_lm), 3)
-plot_gsm_gs <- ggplot(data.frame(in_situ_chl = test_df$chla, satellite_chl = gsm_gs_chl, stringsAsFactors = FALSE)) +
-    geom_point(aes(x=in_situ_chl, y=satellite_chl), alpha=0.5) +
-    geom_abline(intercept=0, slope=1) +
-    geom_abline(intercept=gsm_gs_stats$Intercept, slope=gsm_gs_stats$Slope, color="red", linetype="dotted") +
-    theme_bw() +
-    ggtitle("GSM_GS") +
-    scale_x_log10(limits=c(0.1,30)) +
-    scale_y_log10(limits=c(0.1,30)) +
-    annotation_custom(tableGrob(t(gsm_gs_stats), cols = NULL, theme=ttheme_minimal(base_size=10, padding=unit(c(1,1), "mm"))),
-                      xmin=-Inf, xmax=0.01, ymin=0.8, ymax=Inf)
-
+gsm_gs_chl <- as.numeric(iops[1,])
+plot_gsm_gs <- plot_and_stats(gsm_gs_chl, test_df$chla, "GSM_GS")
 
 
 

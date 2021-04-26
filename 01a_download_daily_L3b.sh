@@ -40,10 +40,10 @@
 #       days=$(seq 354 1 356)
 #       days=$(seq 154 1 158)" 152 154 159"
 #       days=$(seq 1 1 152)" "$(seq 245 1 366) --> to download days 1 to 152 and 245 to 366
-days=$(seq 299 1 366)
+days=$(seq 59 1 96)
 
 # Years to download. See "days" variable for list formatting examples.
-years=2020
+years=2021
 
 # Sensor names, case-sensitive (MODIS or VIIRS-SNPP)
 # Example format: sensors="MODIS VIIRS-SNPP"
