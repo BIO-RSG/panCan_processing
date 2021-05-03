@@ -33,37 +33,37 @@ data_append <- TRUE
 base_input_path <- "/mnt/data3/claysa"
 # NOTE: The full input path will be of the form: base_input_path/sensor/variable/region/year/
 
+# are the files being created for PhytoFit?
+for_phytofit <- FALSE
 
 
-#****************
-# OPTION 1: MAKE PHYTOFIT FILES
-#
-# are the files being created for PhytoFit? if so
-for_phytofit <- TRUE
 
-#   sensors <- c("MODIS", "SeaWiFS", "VIIRS-SNPP")
-#   variables <- c("CHL_OCX", "CHL_POLY4", "CHL_GSM_GS", "CHL_EOF")
-#   regions <- c("atlantic", "pacific")
-sensors <- c("MODIS", "SeaWiFS", "VIIRS-SNPP")
-variables <- c("CHL_OCX")
-regions <- c("atlantic", "pacific")
-years <- 2021
-phytofit_output_path <- "/home/claysa/PhytoFit/data"
-# NOTE: files will be sorted into atlantic or pacific subfolders in the output path
-
-#****************
-
-# # OPTION 2: Make other files
+# #****************
+# # OPTION 1: MAKE PHYTOFIT FILES
 # #
-# #   sensors <- c("MODIS", "SeaWiFS", "VIIRS-SNPP", "OLCI-A", "OLCI-B")
-# #   variables <- c("CHL_OCX", "CHL_POLY4", "CHL_GSM_GS", "CHL_EOF", PAR", "RRS",
-# #                  "CHL1", "CHL2", "CHL-OC5", "SST")
-# #   regions <- c("PANCAN", "NWA", "NEP", "GoSL")
-# sensors <- c("MODIS", "SeaWiFS", "VIIRS-SNPP")
-# variables <- c("CHL_EOF")
-# regions <- c("PANCAN", "NWA", "NEP", "GoSL")
-# years <- 2021
-# # NOTE: The output path will be of the form: base_input_path/sensor/variable/region/annual_fst/
+# #   sensors <- c("MODIS", "SeaWiFS", "VIIRS-SNPP")
+# #   variables <- c("CHL_OCX", "CHL_POLY4", "CHL_GSM_GS", "CHL_EOF")
+# #   regions <- c("atlantic", "pacific")
+# sensors <- c("MODIS", "VIIRS-SNPP")
+# variables <- c("CHL_GSM_GS")
+# regions <- c("atlantic", "pacific")
+# years <- 2020
+# phytofit_output_path <- "/home/claysa/PhytoFit/data"
+# # NOTE: files will be sorted into atlantic or pacific subfolders in the output path
+# 
+# #****************
+
+# OPTION 2: Make other files
+#
+#   sensors <- c("MODIS", "SeaWiFS", "VIIRS-SNPP", "OLCI-A", "OLCI-B")
+#   variables <- c("CHL_OCX", "CHL_POLY4", "CHL_GSM_GS", "CHL_EOF", PAR", "RRS",
+#                  "CHL1", "CHL2", "CHL-OC5", "SST")
+#   regions <- c("PANCAN", "NWA", "NEP", "GoSL")
+sensors <- c("MODIS", "VIIRS-SNPP")
+variables <- c("CHL_GSM_GS")
+regions <- c("NWA", "NEP")
+years <- 2020:2021
+# NOTE: The output path will be of the form: base_input_path/sensor/variable/region/annual_fst/
 
 
 
@@ -172,13 +172,20 @@ for (region in regions) {
             
             print(variable)
             
+            if (for_phytofit) {
+                input_dir <- file.path(base_input_path, sensor, variable, ifelse(region=="atlantic", "NWA", "NEP"))
+                output_dir <- file.path(phytofit_output_path, region)
+            } else {
+                input_dir <- file.path(base_input_path, sensor, variable, region)
+                output_dir <- file.path(input_dir, "annual_fst")
+            }
+            
             # check if there is data for this combination
+            dir_check <- list.files(input_dir)
+            dir_check <- dir_check[dir_check %in% years]
+            if (length(dir_check)==0) {next}
             
-            
-            
-            
-            
-            
+            dir.create(output_dir, showWarnings=FALSE, recursive=TRUE)
             
             if (variable=="RRS") {
                 input_variable <- paste0("Rrs_", waves)
@@ -193,14 +200,6 @@ for (region in regions) {
                 input_variable <- "sst"
                 output_variable <- variable
             }
-            
-            input_dir <- file.path(base_input_path, sensor, variable, region)
-            if (for_phytofit) {
-                output_dir <- file.path(phytofit_output_path, region)
-            } else {
-                output_dir <- file.path(input_dir, "annual_fst")
-            }
-            dir.create(output_dir, showWarnings=FALSE, recursive=TRUE)
             
             
             # If this is for PhytoFit, you must subset the data to either the
@@ -229,7 +228,7 @@ for (region in regions) {
                 
                 # get a list of files for this year
                 files <- list.files(path = file.path(input_dir, year), pattern = '*.nc')
-            
+                
                 if (length(files)==0) {next}
                 
                 # get the day of each existing netcdf filename
