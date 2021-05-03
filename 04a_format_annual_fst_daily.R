@@ -28,42 +28,37 @@ library(oceancolouR)
 # exists but is incomplete, the data for the new days will be
 # appended to the end of it
 # NOTE: this assumes you're downloading and adding days in order
-data_append <- TRUE
+data_append <- FALSE
 
 base_input_path <- "/mnt/data3/claysa"
 # NOTE: The full input path will be of the form: base_input_path/sensor/variable/region/year/
 
 # are the files being created for PhytoFit?
-for_phytofit <- FALSE
+for_phytofit <- TRUE
 
 
-
-# #****************
-# # OPTION 1: MAKE PHYTOFIT FILES
-# #
-# #   sensors <- c("MODIS", "SeaWiFS", "VIIRS-SNPP")
-# #   variables <- c("CHL_OCX", "CHL_POLY4", "CHL_GSM_GS", "CHL_EOF")
-# #   regions <- c("atlantic", "pacific")
-# sensors <- c("MODIS", "VIIRS-SNPP")
-# variables <- c("CHL_GSM_GS")
-# regions <- c("atlantic", "pacific")
-# years <- 2020
-# phytofit_output_path <- "/home/claysa/PhytoFit/data"
-# # NOTE: files will be sorted into atlantic or pacific subfolders in the output path
-# 
-# #****************
-
-# OPTION 2: Make other files
-#
-#   sensors <- c("MODIS", "SeaWiFS", "VIIRS-SNPP", "OLCI-A", "OLCI-B")
-#   variables <- c("CHL_OCX", "CHL_POLY4", "CHL_GSM_GS", "CHL_EOF", PAR", "RRS",
-#                  "CHL1", "CHL2", "CHL-OC5", "SST")
-#   regions <- c("PANCAN", "NWA", "NEP", "GoSL")
+# OPTION 1: MAKE PHYTOFIT FILES
+#       sensors <- c("MODIS", "SeaWiFS", "VIIRS-SNPP")
+#       variables <- c("CHL_OCX", "CHL_POLY4", "CHL_GSM_GS", "CHL_EOF")
+#       regions <- c("atlantic", "pacific")
 sensors <- c("MODIS", "VIIRS-SNPP")
-variables <- c("CHL_GSM_GS")
-regions <- c("NWA", "NEP")
-years <- 2020:2021
-# NOTE: The output path will be of the form: base_input_path/sensor/variable/region/annual_fst/
+variables <- c("CHL_OCX", "CHL_POLY4", "CHL_GSM_GS", "CHL_EOF")
+regions <- c("atlantic", "pacific")
+years <- 2021
+phytofit_output_path <- "/home/claysa/PhytoFit/data"
+# NOTE: files will be sorted into atlantic or pacific subfolders in the output path
+
+
+# # OPTION 2: Make other files
+# #     sensors <- c("MODIS", "SeaWiFS", "VIIRS-SNPP", "OLCI-A", "OLCI-B")
+# #     variables <- c("CHL_OCX", "CHL_POLY4", "CHL_GSM_GS", "CHL_EOF", PAR", "RRS",
+# #                    "CHL1", "CHL2", "CHL-OC5", "SST")
+# #     regions <- c("PANCAN", "NWA", "NEP", "GoSL")
+# sensors <- c("MODIS", "VIIRS-SNPP")
+# variables <- c("CHL_OCX", "CHL_POLY4", "CHL_GSM_GS", "CHL_EOF", "PAR", "RRS", "SST")
+# regions <- c("PANCAN", "NWA", "NEP", "GoSL")
+# years <- 2021
+# # NOTE: The output path will be of the form: base_input_path/sensor/variable/region/annual_fst/
 
 
 
@@ -173,7 +168,10 @@ for (region in regions) {
             print(variable)
             
             if (for_phytofit) {
-                input_dir <- file.path(base_input_path, sensor, variable, ifelse(region=="atlantic", "NWA", "NEP"))
+                tmp_reg <- ifelse(variable=="CHL_OCX", "PANCAN",
+                                  ifelse(region=="pacific", "NEP",
+                                         ifelse(variable=="CHL_EOF", "GoSL", "NWA")))
+                input_dir <- file.path(base_input_path, sensor, variable, tmp_reg)
                 output_dir <- file.path(phytofit_output_path, region)
             } else {
                 input_dir <- file.path(base_input_path, sensor, variable, region)
