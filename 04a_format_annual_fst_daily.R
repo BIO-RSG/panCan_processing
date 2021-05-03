@@ -42,8 +42,8 @@ for_phytofit <- TRUE
 #       variables <- c("CHL_OCX", "CHL_POLY4", "CHL_GSM_GS", "CHL_EOF")
 #       regions <- c("atlantic", "pacific")
 sensors <- c("MODIS", "VIIRS-SNPP")
-variables <- c("CHL_OCX", "CHL_POLY4", "CHL_GSM_GS", "CHL_EOF")
-regions <- c("atlantic", "pacific")
+variables <- c("CHL_EOF")
+regions <- c("atlantic")
 years <- 2021
 phytofit_output_path <- "/home/claysa/PhytoFit/data"
 # NOTE: files will be sorted into atlantic or pacific subfolders in the output path
@@ -87,37 +87,33 @@ data("pancan_lons_4km", package="oceancolouR")
 # get valid indices of input data for the output data file, based on lats/lons
 phytofit_index <- function(region, variable) {
     
-    # these are the boundaries of the output data
-    lon_range <- lon_bounds[[ifelse(region=="pacific", "NEP", region)]]
-    lat_range <- lat_bounds[[ifelse(region=="pacific", "NEP", region)]]
-    
-    # these are the lats/lons of the input data
-    if (region=="atlantic") {
-        if (variable=="CHL_OCX") {
-            lon <- pancan_lons_4km
-            lat <- pancan_lats_4km
-        } else if (variable %in% c("CHL_POLY4", "CHL_GSM_GS")) {
+    # lats/lons of the input data
+    if (variable=="CHL_OCX") {
+        lon <- pancan_lons_4km
+        lat <- pancan_lats_4km
+    } else if (variable=="CHL_EOF" & region=="atlantic") {
+        lon <- gosl_lons_4km
+        lat <- gosl_lats_4km
+    } else {
+        if (region=="atlantic") {
             lon <- nwa_lons_4km
             lat <- nwa_lats_4km
-        } else if (variable=="CHL_EOF") {
-            lon <- gosl_lons_4km
-            lat <- gosl_lats_4km
-        }
-    } else if (region=="pacific") {
-        if (variable=="CHL_OCX") {
-            lon <- pancan_lons_4km
-            lat <- pancan_lats_4km
-        } else if (variable %in% c("CHL_POLY4", "CHL_GSM_GS")) {
+        } else if (region=="pacific") {
             lon <- nep_lons_4km
             lat <- nep_lats_4km
         }
     }
     
+    # boundaries of the output data
+    tmp_reg <- ifelse(region=="pacific", "NEP", ifelse(variable=="CHL_EOF", "GoSL", "atlantic"))
+    lon_range <- lon_bounds[[tmp_reg]]
+    lat_range <- lat_bounds[[tmp_reg]]
+    
     # get indices to extract from files, based on input file lat/lon
     # vectors and the lat/lon range that you want for the output files
-    ssok <- lon >= lon_range[1] & lon <= lon_range[2] & lat >= lat_range[1] & lat <= lat_range[2]
+    ok <- lon >= lon_range[1] & lon <= lon_range[2] & lat >= lat_range[1] & lat <= lat_range[2]
     
-    return(ssok)
+    return(ok)
     
 }
 
