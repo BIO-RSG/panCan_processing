@@ -1,7 +1,7 @@
 # Stephanie.Clay@dfo-mpo.gc.ca
 # 18 Dec 2020
 
-# Use 4km-resolution satellite Rrs panCanadian L2 files to create subsetted
+# Use satellite Rrs L2 files to create subsetted
 # chlorophyll files using new chlorophyll-a algorithms.
 
 # CHL_POLY4 requires:
@@ -34,7 +34,7 @@ library(parallel)
 # These are case-sensitive: use only the options listed
 sensor <- "MODIS" # MODIS, SeaWiFS, or VIIRS-SNPP
 region <- "NWA" # NWA or NEP (for CHL_POLY4 or CHL_GSM_GS), or GoSL (for CHL_EOF)
-variable <- "CHL_GSM_GS" # CHL_OCX_RSG, CHL_POLY4, CHL_GSM_GS, or CHL_EOF
+variable <- "CHL_OCX_RSG" # CHL_OCX_RSG, CHL_POLY4, CHL_GSM_GS, or CHL_EOF
 
 years <- 2020
 
@@ -86,7 +86,7 @@ median_rrs <- function(i,ind,rrs,lambda) {
     # Get a vector of Rrs for each wavelength, where each value is the median of
     # the 3x3 pixel box around a point.
     rrs_mat <- sapply(1:length(lambda),function(j) {rrs[[j]][ind[i,"rmin"]:ind[i,"rmax"],ind[i,"cmin"]:ind[i,"cmax"]]})
-    rrs_mat[rrs_mat < 0] <- NA
+    # rrs_mat[rrs_mat < 0] <- NA
     
     # # IF RRS(41X) < 0.0005 AND RRS(4XX)/RRS(41X) > 3, SET TO NA SO THIS IS REMOVED
     # rrs41X <- rrs_mat[,1]
@@ -103,7 +103,7 @@ single_rrs <- function(i,ind,rrs,lambda) {
     
     # Get a vector of Rrs for each wavelength.
     rrs_mat <- sapply(1:length(lambda),function(j) {rrs[[j]][ind[i,"row"],ind[i,"col"]]})
-    rrs_mat[rrs_mat < 0] <- NA
+    # rrs_mat[rrs_mat < 0] <- NA
     
     # # IF RRS(41X) < 0.0005, SET TO NA SO THIS IS REMOVED
     # rrs41X <- rrs_mat[1]
@@ -182,13 +182,13 @@ if (variable == "CHL_OCX_RSG") {
     library(pbapply)
     library(compiler)
     
+    num_cl <- min(num_cl, detectCores()-1)
+    
     # Compile gsm function to speed it up.
     gsm_cmp <- cmpfun(gsm)
     
-    #********************************
     # GET OPTIMAL EXPONENTS
     # Based on region, sensor, and choice of g coefs - constant or spectrally-dependent?
-    
     exps <- read.csv(exp_file, stringsAsFactors = FALSE)
     exps <- as.numeric(unlist(exps[exps$region==region & exps$sensor==sensor & exps$gtype==gtype,4:6]))
     chl_exp <- exps[1]
@@ -324,8 +324,6 @@ for (i in 1:length(years)) {
                 # Convert values to below sea level.
                 rrs <- rrs/(0.52 + 1.7*rrs)
                 
-                num_cl <- min(num_cl, detectCores()-1)
-                
                 # Initiate cluster.
                 cl <- makeCluster(num_cl)
                 # Load necessary variables and libraries into cluster.
@@ -406,124 +404,8 @@ for (i in 1:length(years)) {
 }
 
 
-# if (nrow(bad_files) > 0) {
-#     bad_file_fname <- paste0(variable, "_L2_bad_files_", sensor, "_", region, "_", paste0(range(years), collapse="-"), paste0(range(days), collapse="-"), ".csv")
-#     write.csv(matrix(bad_files, ncol=1), bad_file_fname, row.names=FALSE)
-# }
-
-
-stop()
-
-# testing differences between NASA OCI and RSG OCI
-# they should be the same, otherwise I'm doing something different than NASA
-
-library(ggplot2)
-library(patchwork)
-
-x <- l2_chl[is.finite(l2_chl)]
-chl_oci <- oci(rrs, wvs$blues, wvs$green, coefs, use_443nm=TRUE,
-               sensor = ifelse(sensor=="VIIRS-SNPP", "viirs", tolower(sensor)),
-               CI_coef_version = 1)
-chl_valid <- chl_oci$oci_chl
-y <- chl_valid
-diff <- y - x
-pdiff <- (y-x)/x
-
-hu_ind <- chl_oci$hu_ind
-blend_ind <- chl_oci$blend_ind
-ocx_ind <- !hu_ind & !blend_ind
-
-tmp_df <- data.frame(nasa=x, rsg=y,
-                     diff=diff, pdiff=pdiff,
-                     algorithm = ifelse(hu_ind, "hu", ifelse(blend_ind, "blend", "ocx")),
-                     stringsAsFactors = FALSE)
-
-# p1 <- ggplot(tmp_df, aes(x=nasa, y=rsg, color=algorithm)) +
-#     geom_point() +
-#     scale_x_log10(limits=c(0.05,4)) +
-#     scale_y_log10(limits=c(0.05,4))
-# p2 <- ggplot(tmp_df) + geom_density(aes(x=diff, fill=algorithm), alpha=0.6)
-p3 <- ggplot(tmp_df, aes(x=nasa, y=pdiff, color=algorithm)) +
-    geom_point() +
-    scale_x_log10(limits=c(0.05,4))
-
-# print(p1 / p2)
-print(p3)
-
-sum(diff,na.rm=TRUE)/sum(x, na.rm=TRUE) * 100
-
-sum(x != y)
-sum(diff > 0.01)
-
-tmp_df[diff > 0.01,]
-
-
-# there are still some hu values different from nasa
-# is it the color index? or the coefficients? or the conv_rrs_to_555 function? or the input itself?
-tmp_df[tmp_df$algorithm=="hu" & tmp_df$diff < -0.005,]
-
-
-stop()
-
-
-CI_bound1 <- 0.15
-CI_bound2 <- 0.2
-chl_oci <- oci(rrs, wvs$blues, wvs$green, coefs, use_443nm=TRUE,
-               sensor = ifelse(sensor=="VIIRS-SNPP", "viirs", tolower(sensor)),
-               CI_coef_version = 1, CI_bound1=CI_bound1, CI_bound2=CI_bound2)
-chl_valid <- chl_oci$oci_chl
-hu_ind <- chl_oci$hu_ind
-blend_ind <- chl_oci$blend_ind
-ocx_ind <- !hu_ind & !blend_ind
-chl_ocx <- ocx(rrs, wvs$blues, wvs$green, coefs, use_443nm=TRUE)
-chl_hu <- hu(rrs, get_ci_bands("modis"), get_ci_coefs(1))
-#***
-blend_fn <- function(chl_hu, chl_ocx, CI_bound1=0.15, CI_bound2=0.2) {
-    a <- (chl_hu - CI_bound1)/(CI_bound2 - CI_bound1)
-    b <- (CI_bound2 - chl_hu)/(CI_bound2 - CI_bound1)
-    blend_chl <- a * chl_ocx + b * chl_hu
-    return(list(blend_chl, a, b))
+if (nrow(bad_files) > 0) {
+    bad_file_fname <- paste0(variable, "_L2_bad_files_", sensor, "_", region, "_", paste0(range(years), collapse="-"), paste0(range(days), collapse="-"), ".csv")
+    write.csv(matrix(bad_files, ncol=1), bad_file_fname, row.names=FALSE)
 }
-
-tmp_df <- data.frame(nasa=x, oci=chl_valid, ocx=chl_ocx, hu=chl_hu, blend=blend_fn(chl_hu, chl_ocx, CI_bound1, CI_bound2)[[1]],
-                     algorithm = ifelse(hu_ind, "hu", ifelse(blend_ind, "blend", "ocx")),
-                     stringsAsFactors = FALSE)
-xlims <- c(0.1, 0.3)
-ylims <- c(-0.3, 0.3)
-p1 <- ggplot(tmp_df, aes(x=nasa, y=(oci-nasa)/nasa, color=algorithm)) +
-    geom_point() +
-    scale_x_log10(limits=xlims) +
-    scale_y_continuous(limits=ylims)
-p2 <- ggplot(tmp_df, aes(x=nasa, y=(ocx-nasa)/nasa, color=algorithm)) +
-    geom_point() +
-    scale_x_log10(limits=xlims) +
-    scale_y_continuous(limits=ylims)
-p3 <- ggplot(tmp_df, aes(x=nasa, y=(hu-nasa)/nasa, color=algorithm)) +
-    geom_point() +
-    scale_x_log10(limits=xlims) +
-    scale_y_continuous(limits=ylims)
-p4 <- ggplot(tmp_df, aes(x=nasa, y=(blend-nasa)/nasa, color=algorithm)) +
-    geom_point() +
-    scale_x_log10(limits=xlims) +
-    scale_y_continuous(limits=ylims)
-p1 / p2 / p3 / p4
-
-tmp_df[tmp_df$algorithm=="blend" & tmp_df$nasa < 0.2,]
-
-
-
-
-
-# assume your ocx component is accurate
-# work backward - if all the difference is coming from hu, how much?
-
-tmp_df$a = blend_fn(chl_hu, chl_ocx, CI_bound1, CI_bound2)[[2]]
-tmp_df$b = blend_fn(chl_hu, chl_ocx, CI_bound1, CI_bound2)[[3]]
-
-# a * chl_ocx + b * chl_hu
-tmp_df$aocx = tmp_df$a * chl_ocx
-tmp_df$bhu = tmp_df$b * chl_hu
-
-tmp_df[tmp_df$algorithm=="blend" & tmp_df$nasa < 0.2,]
-
 

@@ -32,24 +32,18 @@ library(stringr)
 
 # These are case-sensitive: use only the options listed
 sensor <- "VIIRS-SNPP" # MODIS, SeaWiFS, or VIIRS-SNPP
-region <- "NWA" # NWA or NEP (for CHL_POLY4 or CHL_GSM_GS), or GoSL (for CHL_EOF)
+region <- "NEP" # NWA or NEP (for CHL_POLY4 or CHL_GSM_GS), or GoSL (for CHL_EOF)
 variable <- "CHL_GSM_GS" # CHL_POLY4, CHL_GSM_GS, or CHL_EOF
 
-years <- 2012:2021
+years <- 2021
 
-days <- 1:366
+days <- 97:122
 
 path <- paste0("/mnt/data3/claysa/", sensor)
 
 # acceptable range of calculated chl (anything outside this will be converted to NA)
 # **note: this is required to avoid anomalous huge values (e.g. 1e124) that cause an error when writing to netCDF
 chl_range <- c(0,100)
-
-
-#**************************
-# FOR CHL_POLY4 ONLY
-# Filename containing optimal POLY4 chla coefficients.
-coef_file <- "03a_poly4_coefs_2019.csv"
 
 
 #**************************
@@ -70,9 +64,6 @@ num_cl <- 10
 # nonlinear least squares with the nls() function). Defaults: c(0.01, 0.03, 0.019)
 iop3 <- c(0.01, 0.03, 0.019)
 
-# # Use single centre pixel (single-rrs) or median of 3x3 box around centre pixel (median-rrs)?
-# rformat <- "single-rrs"
-
 
 
 #*******************************************************************************
@@ -81,8 +72,9 @@ iop3 <- c(0.01, 0.03, 0.019)
 if (variable == "CHL_POLY4") {
     
     # Get coefficients, sensor and region-dependent
-    coefs <- read.csv(coef_file, stringsAsFactors = FALSE)
-    coefs <- as.numeric(unlist(coefs[coefs$region==region & coefs$sensor==sensor,3:7]))
+    coefs <- get_ocx_coefs(sensor=ifelse(sensor=="VIIRS-SNPP", "viirs", tolower(sensor)),
+                           region=tolower(region),
+                           alg="poly4")
     
     # Get wavelengths, sensor-dependent
     all_wvs <- list("MODIS"=list("blue"=c(443,488), "green"=547),
@@ -131,32 +123,13 @@ if (variable == "CHL_POLY4") {
     library(pbapply)
     library(compiler)
     
-    # # Function to get median Rrs of 3x3 pixel box around each pixel.
-    # median_rrs <- function(i,ind,rrs,lambda) {
-    #     
-    #     # Get a vector of Rrs for each wavelength, where each value is the median of
-    #     # the 3x3 pixel box around a point.
-    #     rrs_mat <- sapply(1:length(lambda),function(j) {rrs[[j]][ind[i,"rmin"]:ind[i,"rmax"],ind[i,"cmin"]:ind[i,"cmax"]]})
-    #     rrs_mat[rrs_mat < 0] <- NA
-    #     
-    #     # # IF RRS(41X) < 0.0005 AND RRS(4XX)/RRS(41X) > 3, SET TO NA SO THIS IS REMOVED
-    #     # rrs41X <- rrs_mat[,1]
-    #     # rrs4XX <- rrs_mat[,2]
-    #     # #rrs_mat[(is.na(rrs41X) | (rrs41X < 0.0005 & rrs4XX/rrs41X > 3)), 1] <- NA
-    #     # rrs_mat[(is.na(rrs41X) | rrs4XX/rrs41X > 4), 1] <- NA
-    #     
-    #     rrs_median <- apply(rrs_mat,2,median,na.rm=T)
-    #     return(rrs_median)
-    #     
-    # }
+    num_cl <- min(num_cl, detectCores()-1)
     
     # Compile gsm function to speed it up.
     gsm_cmp <- cmpfun(gsm)
     
-    #********************************
     # GET OPTIMAL EXPONENTS
     # Based on region, sensor, and choice of g coefs - constant or spectrally-dependent?
-    
     exps <- read.csv(exp_file, stringsAsFactors = FALSE)
     exps <- as.numeric(unlist(exps[exps$region==region & exps$sensor==sensor & exps$gtype==gtype,4:6]))
     chl_exp <- exps[1]
@@ -174,7 +147,7 @@ if (variable == "CHL_POLY4") {
 
 
 #*******************************************************************************
-# Get indices of lat/lon so the data can be restricted by region (NWA or NEP)
+# Get indices of lat/lon so the data can be restricted by region
 
 lon_range <- lon_bounds[[region]]
 lat_range <- lat_bounds[[region]]
@@ -183,7 +156,7 @@ lat_range <- lat_bounds[[region]]
 data("pancan_lats_4km")
 data("pancan_lons_4km")
 
-# get lat/lon indices for the selected region (NWA or NEP)
+# get lat/lon indices for the selected region
 ssok <- abs(pancan_lons_4km) >= abs(lon_range[2]) & abs(pancan_lons_4km) <= abs(lon_range[1]) & pancan_lats_4km >= lat_range[1] & pancan_lats_4km <= lat_range[2]
 
 # To catch files that give the following error when writing the new data to netCDF:
@@ -251,7 +224,7 @@ for (i in 1:length(years)) {
             L3b_dim <- as.integer(c(nrow(rrs), 1))
             
             # remove rows with invalid Rrs
-            nonNA_ind <- apply(is.finite(rrs) & rrs >= 0, MARGIN=1, FUN=sum)==ncol(rrs)
+            nonNA_ind <- apply(is.finite(rrs), MARGIN=1, FUN=sum)==ncol(rrs)
             if (sum(nonNA_ind) > 1) {
                 rrs <- rrs[nonNA_ind,]
             } else if (sum(nonNA_ind)==1) {
@@ -278,35 +251,14 @@ for (i in 1:length(years)) {
                 
             } else if (variable == "CHL_GSM_GS") {
                 
-                # # FORMAT RRS
-                # if (rformat=="median-rrs") {
-                #     
-                #     cat("Formatting Rrs using the median of the 3x3 pixel box around the centre pixel...\n\n")
-                #     
-                #     # Get indices of pixels in the 3x3 box around the centre pixel.
-                #     ind <- data.frame(ind)
-                #     ind$rmin <- apply(cbind(ind$row - 1,rep(0,nrow(ind))),1,max)
-                #     ind$rmax <- apply(cbind(ind$row + 1,rep(l2_dim[1],nrow(ind))),1,min)
-                #     ind$cmin <- apply(cbind(ind$col - 1,rep(0,nrow(ind))),1,max)
-                #     ind$cmax <- apply(cbind(ind$col + 1,rep(l2_dim[2],nrow(ind))),1,min)
-                #     
-                #     # Use parallel processing to get matrix of median rrs
-                #     cl <- makeCluster(num_cl)
-                #     clusterExport(cl, c('median_rrs','rrs','wvs'))
-                #     rrs_sat <- parSapply(cl,1:nrow(ind),median_rrs,ind=ind,rrs=rrs,lambda=wvs)
-                #     stopCluster(cl)
-                #     
-                # }
-                
                 # Convert values to below sea level.
                 rrs <- rrs/(0.52 + 1.7*rrs)
-                
-                num_cl <- min(num_cl, detectCores()-1)
                 
                 # Initiate cluster.
                 cl <- makeCluster(num_cl)
                 # Load necessary variables and libraries into cluster.
-                clusterExport(cl, c('gsm_cmp','gsm_model','rrs','wvs','iop3', 'chl_exp','adg_exp','bbp_exp','gtype'))
+                clusterExport(cl, c('gsm_cmp','gsm_model','rrs','wvs','iop3',
+                                    'chl_exp','adg_exp','bbp_exp','gtype'))
                 iops <- pbapply(X=rrs,
                                 MARGIN=1,
                                 FUN=gsm_cmp,
