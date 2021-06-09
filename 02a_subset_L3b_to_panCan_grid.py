@@ -6,33 +6,41 @@ Created on Mon Apr  9 15:18:49 2018
 @author: detraceyb
 """
 
-#==================================================================
-# VARIABLES THAT CAN BE CHANGED BY THE USER
-
-# define variable that is being extracted (CHL, PAR, SST, or RRS, case-sensitive)
-# example: varlist = ["CHL", "PAR", "RRS", "SST"]
-varlist = ["CHL_GSM_GS"]
-sensors = ["MODIS"]
-years = range(2020, 2021) # remember the end value is excluded
-doys = range(103, 104)
-base_input_path = "/home/claysa/panCan_processing/L2/"
-
-# path to script and 02a_CAN_4km.nc
-base_script_path = '/home/claysa/panCan_processing/'
-
-# path to input and output
-# base_input_path = '/mnt/data2/claysa/'
-base_output_path = '/mnt/data3/claysa/'
-
-
-#==================================================================
-
 import numpy as np
 import netCDF4 as nc4
 import datetime
 from pathlib import Path
 import re
+import sys
 
+
+#==================================================================
+# VARIABLES THAT CAN BE CHANGED BY THE USER
+
+# define variable that is being extracted (CHL, PAR, SST, or RRS, case-sensitive)
+# example: varlist = ["CHL", "PAR", "RRS", "SST"]
+# years = range(2021, 2022) # remember the end value is excluded
+# doys = range(97, 123)
+# sensors = ["MODIS", "VIIRS-SNPP"]
+# varlist = ["CHL", "PAR", "RRS", "SST"]
+
+
+years = range(int(sys.argv[1]), int(sys.argv[1])+1)
+doys = range(int(sys.argv[2]), int(sys.argv[3])+1)
+sensors = [sys.argv[4]]
+varlist = [sys.argv[5]]
+
+
+# path to script and 02a_CAN_4km.nc
+base_script_path = '/home/claysa/panCan_processing/'
+
+# path to input and output
+base_input_path = '/mnt/data2/claysa/'
+base_output_path = '/mnt/data3/claysa/'
+
+
+
+#==================================================================
 
 with nc4.Dataset(base_script_path + '02a_CAN_4km.nc') as nc_grid:
     bins_out = nc_grid['bin_num'][:]

@@ -30,16 +30,26 @@ library(stringr)
 #*******************************************************************************
 # VARIABLES TO CHANGE
 
-# These are case-sensitive: use only the options listed
-sensor <- "VIIRS-SNPP" # MODIS, SeaWiFS, or VIIRS-SNPP
-region <- "NEP" # NWA or NEP (for CHL_POLY4 or CHL_GSM_GS), or GoSL (for CHL_EOF)
-variable <- "CHL_GSM_GS" # CHL_POLY4, CHL_GSM_GS, or CHL_EOF
+# # These are case-sensitive: use only the options listed
+# sensor <- "VIIRS-SNPP" # MODIS, SeaWiFS, or VIIRS-SNPP
+# region <- "NEP" # NWA or NEP (for CHL_POLY4 or CHL_GSM_GS), or GoSL (for CHL_EOF)
+# variable <- "CHL_GSM_GS" # CHL_POLY4, CHL_GSM_GS, or CHL_EOF
+# 
+# years <- 2021
+# 
+# days <- 97:122
 
-years <- 2021
 
-days <- 97:122
+all_args <- commandArgs(trailingOnly=TRUE)
+years <- as.numeric(all_args[1])
+days <- seq(as.numeric(all_args[2]), as.numeric(all_args[3]))
+sensor <- all_args[4]
+variable <- all_args[5]
+region <- all_args[6]
+
 
 path <- paste0("/mnt/data3/claysa/", sensor)
+repo_path <- "/home/claysa/panCan_processing"
 
 # acceptable range of calculated chl (anything outside this will be converted to NA)
 # **note: this is required to avoid anomalous huge values (e.g. 1e124) that cause an error when writing to netCDF
@@ -49,7 +59,7 @@ chl_range <- c(0,100)
 #**************************
 # FOR CHL_GSM GS ONLY
 # Filename containing optimal GSM_GS CHLA exponents.
-exp_file <- "03b_gsm_exponents_2019.csv"
+exp_file <- file.path(repo_path, "03b_gsm_exponents_2019.csv")
 
 # g coefficients: gs or gc
 #   gs: spectrally-dependent g coefficients
@@ -96,7 +106,7 @@ if (variable == "CHL_POLY4") {
     all_rrs <- paste0("Rrs_", wvs)
     
     # Get the training set filename
-    tset_fname <- list.files(pattern=paste0("03c_EOF_training_set_", region, "_", sensor))
+    tset_fname <- list.files(repo_path, pattern=paste0("03c_EOF_training_set_", region, "_", sensor))
     
     # Check if the file exists for this region and sensor
     if (length(tset_fname)==0) {
@@ -105,7 +115,7 @@ if (variable == "CHL_POLY4") {
         stop("Training set file must be in csv format")
     }
     
-    eof_training_set <- read.csv(tset_fname, header=TRUE)
+    eof_training_set <- read.csv(file.path(repo_path, tset_fname), header=TRUE)
     
     # Make sure it's in the right format and has at least a few points
     if (!all(c(paste0("Rrs_",wvs), "chla") %in% colnames(eof_training_set))) {
@@ -205,6 +215,17 @@ for (i in 1:length(years)) {
             
             L3b_name <- L3b_files_day[fx,"files"]
             
+            old_file <- file.path(in_path_year, L3b_name)
+            new_file <- file.path(out_path_year,
+                                  paste0(strsplit(L3b_name, "[.]")[[1]][1],
+                                         ifelse(sensor=="VIIRS-SNPP", paste0(".L3b_DAY_SNPP_", variable, "_"), paste0(".L3b_DAY_", variable, "_")),
+                                         region, ".nc"))
+            
+            if (file.exists(new_file)) {
+                cat(paste0(new_file, " already exists, skipping to next file...\n"))
+                next
+            }
+            
             cat(paste0("Getting L3b data from ",L3b_name,"...\n"))
             
             #*******************************************************************
@@ -287,12 +308,6 @@ for (i in 1:length(years)) {
             #*******************************************************************
             # ADD NEW CHLA TO OUTPUT NETCDF
             cat(paste0("Adding ", variable, " layer to L3b NetCDF...\n\n"))
-            
-            old_file <- file.path(in_path_year, L3b_name)
-            new_file <- file.path(out_path_year,
-                                  paste0(strsplit(L3b_name, "[.]")[[1]][1],
-                                  ifelse(sensor=="VIIRS-SNPP", paste0(".L3b_DAY_SNPP_", variable, "_"), paste0(".L3b_DAY_", variable, "_")),
-                                  region, ".nc"))
             
             file_creation <- try({
                 

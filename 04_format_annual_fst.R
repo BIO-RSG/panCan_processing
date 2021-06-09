@@ -28,37 +28,46 @@ library(oceancolouR)
 # exists but is incomplete, the data for the new days will be
 # appended to the end of it
 # NOTE: this assumes you're downloading and adding days in order
-data_append <- FALSE
+data_append <- TRUE
 
 base_input_path <- "/mnt/data3/claysa"
 # NOTE: The full input path will be of the form: base_input_path/sensor/variable/region/year/
+#       and the output path will be of the form: base_input_path/sensor/variable/region/annual_fst/
 
-# are the files being created for PhytoFit?
-for_phytofit <- TRUE
-
-
-# OPTION 1: MAKE PHYTOFIT FILES
-#       sensors <- c("MODIS", "SeaWiFS", "VIIRS-SNPP")
-#       variables <- c("CHL_OCX", "CHL_POLY4", "CHL_GSM_GS", "CHL_EOF")
-#       regions <- c("atlantic", "pacific")
-sensors <- c("MODIS", "VIIRS-SNPP")
-variables <- c("CHL_EOF")
-regions <- c("atlantic")
-years <- 2021
 phytofit_output_path <- "/home/claysa/PhytoFit/data"
 # NOTE: files will be sorted into atlantic or pacific subfolders in the output path
 
+# # are the files being created for PhytoFit?
+# for_phytofit <- TRUE
+# 
+# if (for_phytofit) {
+#     # OPTION 1: MAKE PHYTOFIT FILES
+#     #       sensors <- c("MODIS", "SeaWiFS", "VIIRS-SNPP")
+#     #       variables <- c("CHL_OCX", "CHL_POLY4", "CHL_GSM_GS", "CHL_EOF")
+#     #       regions <- c("atlantic", "pacific")
+#     years <- 2021
+#     sensors <- c("MODIS", "VIIRS-SNPP")
+#     variables <- c("CHL_EOF")
+#     regions <- c("atlantic")
+# } else {
+#     # OPTION 2: Make other files
+#     #     sensors <- c("MODIS", "SeaWiFS", "VIIRS-SNPP", "OLCI-A", "OLCI-B")
+#     #     variables <- c("CHL_OCX", "CHL_POLY4", "CHL_GSM_GS", "CHL_EOF", PAR", "RRS",
+#     #                    "CHL1", "CHL2", "CHL-OC5", "SST")
+#     #     regions <- c("PANCAN", "NWA", "NEP", "GoSL")
+#     years <- 2021
+#     sensors <- c("MODIS", "VIIRS-SNPP")
+#     variables <- c("CHL_OCX", "CHL_POLY4", "CHL_GSM_GS", "CHL_EOF", "PAR", "RRS", "SST")
+#     regions <- c("PANCAN", "NWA", "NEP", "GoSL")
+# }
 
-# # OPTION 2: Make other files
-# #     sensors <- c("MODIS", "SeaWiFS", "VIIRS-SNPP", "OLCI-A", "OLCI-B")
-# #     variables <- c("CHL_OCX", "CHL_POLY4", "CHL_GSM_GS", "CHL_EOF", PAR", "RRS",
-# #                    "CHL1", "CHL2", "CHL-OC5", "SST")
-# #     regions <- c("PANCAN", "NWA", "NEP", "GoSL")
-# sensors <- c("MODIS", "VIIRS-SNPP")
-# variables <- c("CHL_OCX", "CHL_POLY4", "CHL_GSM_GS", "CHL_EOF", "PAR", "RRS", "SST")
-# regions <- c("PANCAN", "NWA", "NEP", "GoSL")
-# years <- 2021
-# # NOTE: The output path will be of the form: base_input_path/sensor/variable/region/annual_fst/
+
+all_args <- commandArgs(trailingOnly=TRUE)
+for_phytofit <- as.logical(all_args[1])
+years <- as.numeric(all_args[2])
+sensors <- all_args[3]
+variables <- all_args[4]
+regions <- all_args[5]
 
 
 
@@ -163,6 +172,8 @@ for (region in regions) {
             
             print(variable)
             
+            if (variable=="CHL_EOF" & region=="pacific") {next}
+            
             if (for_phytofit) {
                 tmp_reg <- ifelse(variable=="CHL_OCX", "PANCAN",
                                   ifelse(region=="pacific", "NEP",
@@ -259,7 +270,7 @@ for (region in regions) {
                         
                         # get a list of days that haven't been added yet to the output file
                         day_list <- c()
-                        if (ncol(var_mat)+1 < max(file_days)) {
+                        if (ncol(var_mat) < max(file_days)) {
                             day_list <- (ncol(var_mat)+1):(max(file_days))
                         }
                         
