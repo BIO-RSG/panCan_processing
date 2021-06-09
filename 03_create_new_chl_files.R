@@ -59,7 +59,7 @@ chl_range <- c(0,100)
 #**************************
 # FOR CHL_GSM GS ONLY
 # Filename containing optimal GSM_GS CHLA exponents.
-exp_file <- file.path(repo_path, "03b_gsm_exponents_2019.csv")
+exp_file <- file.path(repo_path, "data/gsm_exponents_2019.csv")
 
 # g coefficients: gs or gc
 #   gs: spectrally-dependent g coefficients
@@ -106,7 +106,7 @@ if (variable == "CHL_POLY4") {
     all_rrs <- paste0("Rrs_", wvs)
     
     # Get the training set filename
-    tset_fname <- list.files(repo_path, pattern=paste0("03c_EOF_training_set_", region, "_", sensor))
+    tset_fname <- list.files(paste0(repo_path, "/data"), pattern=paste0("EOF_training_set_", region, "_", sensor))
     
     # Check if the file exists for this region and sensor
     if (length(tset_fname)==0) {
@@ -115,7 +115,7 @@ if (variable == "CHL_POLY4") {
         stop("Training set file must be in csv format")
     }
     
-    eof_training_set <- read.csv(file.path(repo_path, tset_fname), header=TRUE)
+    eof_training_set <- read.csv(file.path(repo_path, "data", tset_fname), header=TRUE)
     
     # Make sure it's in the right format and has at least a few points
     if (!all(c(paste0("Rrs_",wvs), "chla") %in% colnames(eof_training_set))) {

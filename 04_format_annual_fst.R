@@ -88,7 +88,7 @@ data("gosl_lons_4km", package="oceancolouR")
 data("pancan_lats_4km", package="oceancolouR")
 data("pancan_lons_4km", package="oceancolouR")
 # # for 1km gosl - remaining code is not adapted for this yet
-# nc <- nc_open("gsl_1km.nc")
+# nc <- nc_open("data/gsl_1km.nc")
 # gosl_lats_1km <- ncvar_get(nc, "lat")
 # gosl_lons_1km <- ncvar_get(nc, "lon")
 # nc_close(nc)

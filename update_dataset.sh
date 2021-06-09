@@ -19,7 +19,7 @@
 # To do:
 #       - add OLCI-A and OLCI-B to regular processing
 #       - figure out a system to update SST regularly (CHL/PAR/RRS are updated the next day,
-#           but SST has a lag time of ~2.5-3 months)
+#           but SST has a lag time of ~1.5 months)
 
 
 

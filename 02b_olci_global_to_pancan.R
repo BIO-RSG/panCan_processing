@@ -280,12 +280,12 @@ if (variable=="CHL1") {
 # fwrite(data.frame(col=pancan_cols,
 #                   row=pancan_rows,
 #                   stringsAsFactors = FALSE),
-#        file="02b_panCan_ColsRows_from_ISIN.csv",
+#        file="data/panCan_ColsRows_from_ISIN.csv",
 #        quote=FALSE)
 
 
 # Note that you must subtract 1 because globcolour OLCI is zero-indexed
-pancan_colsrows <- fread("02b_panCan_ColsRows_from_ISIN.csv")
+pancan_colsrows <- fread("data/panCan_ColsRows_from_ISIN.csv")
 pancan_cols <- pancan_colsrows$col - 1
 pancan_rows <- pancan_colsrows$row - 1
 pancan_colsrows <- paste0(pancan_cols, "x", pancan_rows)

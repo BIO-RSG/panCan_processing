@@ -31,7 +31,7 @@ sensors = [sys.argv[4]]
 varlist = [sys.argv[5]]
 
 
-# path to script and 02a_CAN_4km.nc
+# path to script
 base_script_path = '/home/claysa/panCan_processing/'
 
 # path to input and output
@@ -42,7 +42,7 @@ base_output_path = '/mnt/data3/claysa/'
 
 #==================================================================
 
-with nc4.Dataset(base_script_path + '02a_CAN_4km.nc') as nc_grid:
+with nc4.Dataset(base_script_path + 'data/CAN_4km.nc') as nc_grid:
     bins_out = nc_grid['bin_num'][:]
 
 master_full_f_out = np.ones(bins_out.size, dtype=np.float32 ) * np.float32(np.nan)

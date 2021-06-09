@@ -110,7 +110,7 @@ df <- df %>%
 df <- df %>%
     dplyr::mutate(t1 = as_datetime(as.numeric(nctime)),
                   t2 = as_datetime(datetime, tz="UTC")) %>%
-    dplyr::mutate(timediff = abs(sapply(1:nrow(df), function(i) time_length(interval(t1[i], t2[i]), unit="hour"))))
+    dplyr::mutate(timediff = abs(lubridate::time_length(lubridate::interval(t1, t2), unit="hour")))
 
 
 # MAKE SURE THEY'RE IN THE RIGHT FORMAT
@@ -150,7 +150,7 @@ test_df <- df[!training_ind,]
 # # WRITE TO OUTPUT
 # 
 # write.csv(dplyr::bind_cols(metadata_df[training_ind,], training_df),
-#           file=paste0("03c_EOF_training_set_", region, "_", sensor, "_", paste0(range(years), collapse="-"), ".csv"),
+#           file=paste0("data/EOF_training_set_", region, "_", sensor, "_", paste0(range(years), collapse="-"), ".csv"),
 #           row.names=FALSE,
 #           quote=FALSE)
 # 
