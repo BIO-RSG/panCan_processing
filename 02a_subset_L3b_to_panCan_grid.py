@@ -1,4 +1,4 @@
-#!/home/claysa/anaconda3/bin/python
+#!/usr/bin/env python
 
 """
 Created on Mon Apr  9 15:18:49 2018

@@ -1,5 +1,7 @@
 #! /bin/bash
 
+source /home/claysa/anaconda3/etc/profile.d/conda.sh
+
 # Stephanie.Clay@dfo-mpo.gc.ca
 # 8 June 2021
 
