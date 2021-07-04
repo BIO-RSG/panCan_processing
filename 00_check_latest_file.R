@@ -6,7 +6,6 @@
 # (Not the same as the script used to check which files are missing from the entire
 # dataset, 03_check_for_missing_panCan_files.R)
 
-
 # MODIS, SeaWiFS, VIIRS-SNPP, OLCI-A, OLCI-B
 sensors <- c("MODIS", "SeaWiFS", "VIIRS-SNPP", "OLCI-A", "OLCI-B")
 
